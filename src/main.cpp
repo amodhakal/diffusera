@@ -1,9 +1,10 @@
 #define GL_SILENCE_DEPRECATION
+#include "io.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <OpenGL/gl.h>
 #include <cstdlib>
-#include <fstream>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -17,13 +18,9 @@ void handleMouseCallback(GLFWwindow *window, double xPosition,
 void handleScrollCallback(GLFWwindow *window, double xOffset, double yOffset);
 
 void processInput(GLFWwindow *window);
-const std::string getFullFileContents(const char *filePath);
 
 constexpr auto VERTEX_PATH = "./shaders/shaders.vert";
 constexpr auto FRAGMENT_PATH = "./shaders/shaders.frag";
-
-// yaw *= xOffset;
-// pitch *= yOffset;
 
 constexpr uint SCR_WIDTH = 800, SCR_HEIGHT = 600;
 
@@ -66,8 +63,9 @@ int main() {
 
   glEnable(GL_DEPTH_TEST);
 
-  const std::string vertexShaderCodeRaw = getFullFileContents(VERTEX_PATH);
-  const std::string fragmentShaderCodeRaw = getFullFileContents(FRAGMENT_PATH);
+  const std::string vertexShaderCodeRaw = IO::getFullFileContents(VERTEX_PATH);
+  const std::string fragmentShaderCodeRaw =
+      IO::getFullFileContents(FRAGMENT_PATH);
   const char *vertexShaderCode = vertexShaderCodeRaw.c_str();
   const char *fragmentShaderCode = fragmentShaderCodeRaw.c_str();
 
@@ -277,21 +275,7 @@ void processInput(GLFWwindow *window) {
   if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
     cameraPosition[1] += cameraSpeed;
   }
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+  if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
     cameraPosition[1] -= cameraSpeed;
   }
-}
-
-const std::string getFullFileContents(const char *filePath) {
-  std::ifstream file(filePath);
-  if (!file.is_open()) {
-    throw std::runtime_error("Couldn't open file: " + std::string(filePath));
-  }
-
-  std::string content, line;
-  while (getline(file, line)) {
-    content += line + "\n";
-  }
-
-  return content;
 }
