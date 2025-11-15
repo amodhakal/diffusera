@@ -61,23 +61,28 @@ int main() {
   float vertices[] = {
       // First rectangle (RED)
       // Triangle 1
-      0.625f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f,   // Top Right
-      0.625f, -0.125f, 0.0f, 1.0f, 0.0f, 0.0f,  // Bottom Right
-      0.375f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f,   // Top Left
+      0.625f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // Top Right
+      0.625f, -0.125f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+      1.0f,                                                      // Bottom Right
+      0.375f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // Top Left
       // Triangle 2
-      0.625f, -0.125f, 0.0f, 1.0f, 0.0f, 0.0f,  // Bottom Right
-      0.375f, -0.125f, 0.0f, 1.0f, 0.0f, 0.0f,  // Bottom Left
-      0.375f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f,   // Top Left
+      0.625f, -0.125f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+      1.0f,  // Bottom Right
+      0.375f, -0.125f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // Bottom Left
+      0.375f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,   // Top Left
 
       // Second rectangle (GREEN)
       // Triangle 1
-      -0.375f, 0.125f, 0.0f, 0.0f, 1.0f, 0.0f,   // Top Right
-      -0.375f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f,  // Bottom Right
-      -0.625f, 0.125f, 0.0f, 0.0f, 1.0f, 0.0f,   // Top Left
-                                                 // Triangle 2
-      -0.375f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f,  // Bottom Right
-      -0.625f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f,  // Bottom Left
-      -0.625f, 0.125f, 0.0f, 0.0f, 1.0f, 0.0f    // Top Left
+      -0.375f, 0.125f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f,  // Top Right
+      -0.375f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+      -1.0f,  // Bottom Right
+      -0.625f, 0.125f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f,  // Top Left
+                                                                   // Triangle 2
+      -0.375f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+      -1.0f,  // Bottom Right
+      -0.625f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+      -1.0f,  // Bottom Left
+      -0.625f, 0.125f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f,  // Top Left
   };
 
   // Used to manage everything (VBO) in 1 place
@@ -95,13 +100,18 @@ int main() {
                GL_STATIC_DRAW);  // Copy info from CPU to GPU
 
   // Configure info (vertex) for location 0
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
 
   // Configure info (color) for location 1
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float),
                         (void*)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
+
+  // Configure info (normal) for location 2
+  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float),
+                        (void*)(6 * sizeof(float)));
+  glEnableVertexAttribArray(2);
 
   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -138,7 +148,7 @@ int main() {
 
     int verticeCount =
         sizeof(vertices) /
-        (6 * sizeof(float));  // Correct calculation for vertex count
+        (9 * sizeof(float));  // Correct calculation for vertex count
     glDrawArrays(GL_TRIANGLES, 0, verticeCount);
 
     glfwSwapBuffers(window);  // Swap the buffer
