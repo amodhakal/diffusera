@@ -1,8 +1,8 @@
+#include "config.h"
 #define GL_SILENCE_DEPRECATION
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <OpenGL/gl.h>
-#include <sys/types.h>
 
 #include <cstdlib>
 #include <glm/glm.hpp>
@@ -19,18 +19,10 @@ void handleScrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 
 void processInput(GLFWwindow* window);
 
-constexpr auto VERTEX_PATH = "./shaders/shaders.vert";
-constexpr auto FRAGMENT_PATH = "./shaders/shaders.frag";
-
-constexpr uint SCR_WIDTH = 800, SCR_HEIGHT = 600;
-
-constexpr float CAMERA_SPEED = 1.5f;
-constexpr float CAMERA_SENSITIVITY = 0.1f;
-
 bool isFirstMouse = true;
 float fov = 45.0f, yaw = -90.0f, pitch = 0.0f;
 float deltaTime = 0.0f, lastFrame = 0.0f;
-float lastX = SCR_WIDTH / 2.0f, lastY = SCR_HEIGHT / 2.0f;
+float lastX = Constants::SCR_WIDTH / 2.0f, lastY = Constants::SCR_HEIGHT / 2.0f;
 
 glm::vec3 cameraPosition = {0.0f, 0.0f, 2.0f};
 glm::vec3 cameraFront = {0.0f, 0.0f, -1.0f};
@@ -44,7 +36,8 @@ int main() {
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
   GLFWwindow* window =
-      glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Linterra", nullptr, nullptr);
+      glfwCreateWindow(Constants::SCR_WIDTH, Constants::SCR_HEIGHT, "Linterra",
+                       nullptr, nullptr);
   if (!window) {
     glfwTerminate();
     throw std::runtime_error("Failed GLFW window creation");
@@ -63,8 +56,10 @@ int main() {
 
   glEnable(GL_DEPTH_TEST);
 
-  Shader shader(VERTEX_PATH, FRAGMENT_PATH);
-  glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+  Shader shader(Constants::VERTEX_PATH, Constants::FRAGMENT_PATH);
+
+  glClearColor(Constants::BG_COLOR[0], Constants::BG_COLOR[1],
+               Constants::BG_COLOR[2], Constants::BG_COLOR[3]);
 
   float vertices[] = {
       // First rectangle centered at x = 0.5
@@ -145,7 +140,9 @@ int main() {
     glm::mat4 view =
         glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
     glm::mat4 projection = glm::perspective(
-        glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::radians(fov),
+        (float)Constants::SCR_WIDTH / (float)Constants::SCR_HEIGHT, 0.1f,
+        100.0f);
 
     glUseProgram(shader.getId());  // Use the defined shaders in this program
     glBindVertexArray(VAO);        // Get ready to draw with this VAO
@@ -187,8 +184,8 @@ void handleMouseCallback(GLFWwindow* window, double xPosition,
   lastX = xPosition;
   lastY = yPosition;
 
-  xOffset *= CAMERA_SENSITIVITY;
-  yOffset *= CAMERA_SENSITIVITY;
+  xOffset *= Constants::CAMERA_SENSITIVITY;
+  yOffset *= Constants::CAMERA_SENSITIVITY;
 
   yaw += xOffset;
   pitch += yOffset;
@@ -223,7 +220,7 @@ void processInput(GLFWwindow* window) {
     return;
   }
 
-  float cameraSpeed = CAMERA_SPEED * deltaTime;
+  float cameraSpeed = Constants::CAMERA_SPEED * deltaTime;
 
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
     cameraPosition += cameraSpeed * cameraFront;
