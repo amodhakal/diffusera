@@ -59,23 +59,25 @@ int main() {
                Constants::BG_COLOR[2], Constants::BG_COLOR[3]);
 
   float vertices[] = {
-      // First rectangle (2 triangles)
-      0.625f, 0.125f, 0.0f,   // top right
-      0.625f, -0.125f, 0.0f,  // bottom right
-      0.375f, -0.125f, 0.0f,  // bottom left
+      // First rectangle (RED)
+      // Triangle 1
+      0.625f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f,   // Top Right
+      0.625f, -0.125f, 0.0f, 1.0f, 0.0f, 0.0f,  // Bottom Right
+      0.375f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f,   // Top Left
+      // Triangle 2
+      0.625f, -0.125f, 0.0f, 1.0f, 0.0f, 0.0f,  // Bottom Right
+      0.375f, -0.125f, 0.0f, 1.0f, 0.0f, 0.0f,  // Bottom Left
+      0.375f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f,   // Top Left
 
-      0.625f, 0.125f, 0.0f,   // top right
-      0.375f, -0.125f, 0.0f,  // bottom left
-      0.375f, 0.125f, 0.0f,   // top left
-
-      // Second rectangle (2 triangles)
-      -0.375f, 0.125f, 0.0f,   // top right
-      -0.375f, -0.125f, 0.0f,  // bottom right
-      -0.625f, -0.125f, 0.0f,  // bottom left
-
-      -0.375f, 0.125f, 0.0f,   // top right
-      -0.625f, -0.125f, 0.0f,  // bottom left
-      -0.625f, 0.125f, 0.0f    // top left
+      // Second rectangle (GREEN)
+      // Triangle 1
+      -0.375f, 0.125f, 0.0f, 0.0f, 1.0f, 0.0f,   // Top Right
+      -0.375f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f,  // Bottom Right
+      -0.625f, 0.125f, 0.0f, 0.0f, 1.0f, 0.0f,   // Top Left
+                                                 // Triangle 2
+      -0.375f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f,  // Bottom Right
+      -0.625f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f,  // Bottom Left
+      -0.625f, 0.125f, 0.0f, 0.0f, 1.0f, 0.0f    // Top Left
   };
 
   // Used to manage everything (VBO) in 1 place
@@ -93,10 +95,13 @@ int main() {
                GL_STATIC_DRAW);  // Copy info from CPU to GPU
 
   // Configure info (vertex) for location 0
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
 
-  // Stop the configuration
+  // Configure info (color) for location 1
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
+                        (void*)(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
 
   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -131,7 +136,9 @@ int main() {
     glUniformMatrix4fv(uView, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(uProjection, 1, GL_FALSE, glm::value_ptr(projection));
 
-    int verticeCount = (sizeof(vertices) / sizeof(float)) / 3;
+    int verticeCount =
+        sizeof(vertices) /
+        (6 * sizeof(float));  // Correct calculation for vertex count
     glDrawArrays(GL_TRIANGLES, 0, verticeCount);
 
     glfwSwapBuffers(window);  // Swap the buffer
@@ -139,7 +146,8 @@ int main() {
 
     GLenum err = glGetError();
     if (err != GL_NO_ERROR) {
-      throw std::runtime_error(&"GL Error: "[err]);
+      std::string error = (const char*)glewGetErrorString(err);
+      throw std::runtime_error("OpenGL Error: " + error);
     }
   }
 
