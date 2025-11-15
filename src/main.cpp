@@ -1,24 +1,23 @@
 #define GL_SILENCE_DEPRECATION
-#include "io.h"
-#include "shader.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <OpenGL/gl.h>
-#include <cstdlib>
+#include <sys/types.h>
 
+#include <cstdlib>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <stdexcept>
-#include <string>
-#include <sys/types.h>
 
-void handleResizeCallback(GLFWwindow *window, int width, int height);
-void handleMouseCallback(GLFWwindow *window, double xPosition,
+#include "shader.h"
+
+void handleResizeCallback(GLFWwindow* window, int width, int height);
+void handleMouseCallback(GLFWwindow* window, double xPosition,
                          double yPosition);
-void handleScrollCallback(GLFWwindow *window, double xOffset, double yOffset);
+void handleScrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 
-void processInput(GLFWwindow *window);
+void processInput(GLFWwindow* window);
 
 constexpr auto VERTEX_PATH = "./shaders/shaders.vert";
 constexpr auto FRAGMENT_PATH = "./shaders/shaders.frag";
@@ -44,7 +43,7 @@ int main() {
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-  GLFWwindow *window =
+  GLFWwindow* window =
       glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Linterra", nullptr, nullptr);
   if (!window) {
     glfwTerminate();
@@ -69,23 +68,31 @@ int main() {
 
   float vertices[] = {
       // First rectangle centered at x = 0.5
-      0.625f, 0.125f, 0.0f, 0.0f, 0.0f, 1.0f,  // top right
-      0.625f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom right
-      0.375f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom left
-      0.375f, 0.125f, 0.0f, 0.0f, 0.0f, 1.0f,  // top left
+      0.625f, 0.125f, 0.0f, 0.0f, 0.0f,
+      1.0f,  // top right
+      0.625f, -0.125f, 0.0f, 0.0f, 1.0f,
+      0.0f,  // bottom right
+      0.375f, -0.125f, 0.0f, 0.0f, 1.0f,
+      0.0f,  // bottom left
+      0.375f, 0.125f, 0.0f, 0.0f, 0.0f,
+      1.0f,  // top left
 
       // Second rectangle centered at x = -0.5
-      -0.375f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f,  // top right
-      -0.375f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom right
-      -0.625f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom left
-      -0.625f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f   // top left
+      -0.375f, 0.125f, 0.0f, 1.0f, 0.0f,
+      0.0f,  // top right
+      -0.375f, -0.125f, 0.0f, 0.0f, 1.0f,
+      0.0f,  // bottom right
+      -0.625f, -0.125f, 0.0f, 0.0f, 1.0f,
+      0.0f,  // bottom left
+      -0.625f, 0.125f, 0.0f, 1.0f, 0.0f,
+      0.0f  // top left
   };
 
   uint indices[] = {
-      0, 1, 3, // first triangle
-      1, 2, 3, // second triangle
-      4, 5, 7, // third triangle
-      5, 6, 7  // forth triangle
+      0, 1, 3,  // first triangle
+      1, 2, 3,  // second triangle
+      4, 5, 7,  // third triangle
+      5, 6, 7   // forth triangle
   };
 
   // Used to manage everything (VBO, EBO) in 1 place
@@ -97,26 +104,26 @@ int main() {
 
   // Used to store vertex info to be sent to the gpu
   uint VBO;
-  glGenBuffers(1, &VBO);              // Creates a buffer on the gpu
-  glBindBuffer(GL_ARRAY_BUFFER, VBO); // Binds to VAO
+  glGenBuffers(1, &VBO);               // Creates a buffer on the gpu
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);  // Binds to VAO
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices,
-               GL_STATIC_DRAW); // Copy info from CPU to GPU
+               GL_STATIC_DRAW);  // Copy info from CPU to GPU
 
   // Configure info (vertex) for location 0
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
 
   // Configure info (color) for location 1
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
-                        (void *)(3 * sizeof(float)));
+                        (void*)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
 
   // Used to store the indices to setup the vertices to create triangle
   uint EBO;
-  glGenBuffers(1, &EBO);                      // Creates a buffer on the gpu
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); // Binds to VAO
+  glGenBuffers(1, &EBO);                       // Creates a buffer on the gpu
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);  // Binds to VAO
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
-               GL_STATIC_DRAW); // Copy info from CPU to GPU
+               GL_STATIC_DRAW);  // Copy info from CPU to GPU
 
   // Stop the configuration
 
@@ -140,18 +147,18 @@ int main() {
     glm::mat4 projection = glm::perspective(
         glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
-    glUseProgram(shader.getId()); // Use the defined shaders in this program
-    glBindVertexArray(VAO);       // Get ready to draw with this VAO
+    glUseProgram(shader.getId());  // Use the defined shaders in this program
+    glBindVertexArray(VAO);        // Get ready to draw with this VAO
 
     glUniformMatrix4fv(uModel, 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(uView, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(uProjection, 1, GL_FALSE, glm::value_ptr(projection));
 
     glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT,
-                   0); // Draw the objects
+                   0);  // Draw the objects
 
-    glfwSwapBuffers(window); // Swap the buffer
-    glfwPollEvents();        // Get any events if avaialbe
+    glfwSwapBuffers(window);  // Swap the buffer
+    glfwPollEvents();         // Get any events if avaialbe
 
     GLenum err = glGetError();
     if (err != GL_NO_ERROR) {
@@ -168,11 +175,11 @@ int main() {
   return EXIT_SUCCESS;
 }
 
-void handleResizeCallback(GLFWwindow *window, int width, int height) {
+void handleResizeCallback(GLFWwindow* window, int width, int height) {
   glViewport(0, 0, width, height);
 }
 
-void handleMouseCallback(GLFWwindow *window, double xPosition,
+void handleMouseCallback(GLFWwindow* window, double xPosition,
                          double yPosition) {
   float xOffset = xPosition - lastX;
   float yOffset = lastY - yPosition;
@@ -200,7 +207,7 @@ void handleMouseCallback(GLFWwindow *window, double xPosition,
   cameraFront = glm::normalize(front);
 }
 
-void handleScrollCallback(GLFWwindow *window, double xOffset, double yOffset) {
+void handleScrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
   fov -= (float)yOffset;
   if (fov < 1.0f) {
     fov = 1.0f;
@@ -210,7 +217,7 @@ void handleScrollCallback(GLFWwindow *window, double xOffset, double yOffset) {
   }
 }
 
-void processInput(GLFWwindow *window) {
+void processInput(GLFWwindow* window) {
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, true);
     return;
