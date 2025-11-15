@@ -12,6 +12,7 @@ find_library(COCOA_FRAMEWORK Cocoa REQUIRED)
 
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
+find_package(glew REQUIRED)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 add_executable(${PROJECT_NAME} ${SOURCES})
@@ -20,6 +21,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${OPENGL_INCLUDE_DIR}
     ${GLFW_INCLUDE_DIR}
     ${GLM_INCLUDE_DIR}
+    ${GLEW_INCLUDE_DIR}
     src
 )
 
@@ -29,6 +31,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${QUARTZCORE_FRAMEWORK}
     ${COCOA_FRAMEWORK}
     glfw
+    GLEW::GLEW
 )
 
 add_custom_command(
