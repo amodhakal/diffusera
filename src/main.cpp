@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <print>
 #include <stdexcept>
 
 #include "camera.h"
@@ -23,7 +24,6 @@ void processInput(GLFWwindow* window);
 Camera camera({0, 0, 2});
 
 float deltaTime = 0.0f, lastFrame = 0.0f;
-float lastX = Constants::SCR_WIDTH / 2.0, lastY = Constants::SCR_HEIGHT / 2.0;
 
 int main() {
   glfwInit();
@@ -41,6 +41,8 @@ int main() {
   }
 
   glfwMakeContextCurrent(window);
+  glfwSwapInterval(0);  // Disable V-Sync
+  // glEnable(GL_DEPTH_TEST);
 
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
   glfwSetCursorPosCallback(window, handleMouseCallback);
@@ -51,7 +53,7 @@ int main() {
     throw std::runtime_error("Failed to initialize GLEW");
   }
 
-  glEnable(GL_DEPTH_TEST);
+
 
   Shader shader(Constants::VERTEX_PATH, Constants::FRAGMENT_PATH);
 
@@ -124,10 +126,21 @@ int main() {
   int uView = glGetUniformLocation(shader.getId(), "uView");
   int uProjection = glGetUniformLocation(shader.getId(), "uProjection");
 
+  uint attempts = 0;
+  float combinedDeltaTime = 0;
+
   while (!glfwWindowShouldClose(window)) {
     float currentFrame = glfwGetTime();
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
+
+    combinedDeltaTime += deltaTime;
+    attempts++;
+    if (attempts > 100) {
+      std::println("FPS: {}", std::to_string(1 / (combinedDeltaTime / 100)));
+      combinedDeltaTime = 0;
+      attempts = 0;
+    }
 
     processInput(window);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -181,5 +194,5 @@ void processInput(GLFWwindow* window) {
     return;
   }
 
-  camera.processKeyInput(window);
+  camera.processKeyInput(window, deltaTime);
 }
