@@ -53,43 +53,32 @@ int main() {
     throw std::runtime_error("Failed to initialize GLEW");
   }
 
-
-
   Shader shader(Constants::VERTEX_PATH, Constants::FRAGMENT_PATH);
 
   glClearColor(Constants::BG_COLOR[0], Constants::BG_COLOR[1],
                Constants::BG_COLOR[2], Constants::BG_COLOR[3]);
 
   float vertices[] = {
-      // First rectangle centered at x = 0.5
-      0.625f, 0.125f, 0.0f, 0.0f, 0.0f,
-      1.0f,  // top right
-      0.625f, -0.125f, 0.0f, 0.0f, 1.0f,
-      0.0f,  // bottom right
-      0.375f, -0.125f, 0.0f, 0.0f, 1.0f,
-      0.0f,  // bottom left
-      0.375f, 0.125f, 0.0f, 0.0f, 0.0f,
-      1.0f,  // top left
+      // First rectangle (2 triangles)
+      0.625f, 0.125f, 0.0f,   // top right
+      0.625f, -0.125f, 0.0f,  // bottom right
+      0.375f, -0.125f, 0.0f,  // bottom left
 
-      // Second rectangle centered at x = -0.5
-      -0.375f, 0.125f, 0.0f, 1.0f, 0.0f,
-      0.0f,  // top right
-      -0.375f, -0.125f, 0.0f, 0.0f, 1.0f,
-      0.0f,  // bottom right
-      -0.625f, -0.125f, 0.0f, 0.0f, 1.0f,
-      0.0f,  // bottom left
-      -0.625f, 0.125f, 0.0f, 1.0f, 0.0f,
-      0.0f  // top left
+      0.625f, 0.125f, 0.0f,   // top right
+      0.375f, -0.125f, 0.0f,  // bottom left
+      0.375f, 0.125f, 0.0f,   // top left
+
+      // Second rectangle (2 triangles)
+      -0.375f, 0.125f, 0.0f,   // top right
+      -0.375f, -0.125f, 0.0f,  // bottom right
+      -0.625f, -0.125f, 0.0f,  // bottom left
+
+      -0.375f, 0.125f, 0.0f,   // top right
+      -0.625f, -0.125f, 0.0f,  // bottom left
+      -0.625f, 0.125f, 0.0f    // top left
   };
 
-  uint indices[] = {
-      0, 1, 3,  // first triangle
-      1, 2, 3,  // second triangle
-      4, 5, 7,  // third triangle
-      5, 6, 7   // forth triangle
-  };
-
-  // Used to manage everything (VBO, EBO) in 1 place
+  // Used to manage everything (VBO) in 1 place
   uint VAO;
   glGenVertexArrays(1, &VAO);
 
@@ -104,20 +93,8 @@ int main() {
                GL_STATIC_DRAW);  // Copy info from CPU to GPU
 
   // Configure info (vertex) for location 0
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
-
-  // Configure info (color) for location 1
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
-                        (void*)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
-  // Used to store the indices to setup the vertices to create triangle
-  uint EBO;
-  glGenBuffers(1, &EBO);                       // Creates a buffer on the gpu
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);  // Binds to VAO
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
-               GL_STATIC_DRAW);  // Copy info from CPU to GPU
 
   // Stop the configuration
 
@@ -148,14 +125,14 @@ int main() {
     glm::mat4 view = camera.getView();
     glm::mat4 projection = camera.getProjection();
 
-    glUseProgram(shader.getId());  // Use the defined shaders in this program
-    glBindVertexArray(VAO);        // Get ready to draw with this VAO
+    glUseProgram(shader.getId());
+    glBindVertexArray(VAO);
 
     glUniformMatrix4fv(uView, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(uProjection, 1, GL_FALSE, glm::value_ptr(projection));
 
-    glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT,
-                   0);  // Draw the objects
+    int verticeCount = (sizeof(vertices) / sizeof(float)) / 3;
+    glDrawArrays(GL_TRIANGLES, 0, verticeCount);
 
     glfwSwapBuffers(window);  // Swap the buffer
     glfwPollEvents();         // Get any events if avaialbe
@@ -168,7 +145,6 @@ int main() {
 
   glDeleteVertexArrays(1, &VAO);
   glDeleteBuffers(1, &VBO);
-  glDeleteBuffers(1, &EBO);
   glDeleteProgram(shader.getId());
 
   glfwTerminate();
