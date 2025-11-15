@@ -78,15 +78,24 @@ int main() {
   glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
   float vertices[] = {
-      0.5f,  0.5f,  0.0f, // top right
-      0.5f,  -0.5f, 0.0f, // bottom right
-      -0.5f, -0.5f, 0.0f, // bottom left
-      -0.5f, 0.5f,  0.0f  // top left
+      // First rectangle centered at x = 0.5
+      0.625f, 0.125f, 0.0f, 0.0f, 0.0f, 1.0f,  // top right
+      0.625f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom right
+      0.375f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom left
+      0.375f, 0.125f, 0.0f, 0.0f, 0.0f, 1.0f,  // top left
+
+      // Second rectangle centered at x = -0.5
+      -0.375f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f,  // top right
+      -0.375f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom right
+      -0.625f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom left
+      -0.625f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f   // top left
   };
 
   uint indices[] = {
       0, 1, 3, // first triangle
-      1, 2, 3  // second triangle
+      1, 2, 3, // second triangle
+      4, 5, 7, // third triangle
+      5, 6, 7  // forth triangle
   };
 
   // Used to manage everything (VBO, EBO) in 1 place
@@ -102,8 +111,15 @@ int main() {
   glBindBuffer(GL_ARRAY_BUFFER, VBO); // Binds to VAO
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices,
                GL_STATIC_DRAW); // Copy info from CPU to GPU
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
-                        (void *)0); // Tell how vertex info is configured
+
+  // Configure info (vertex) for location 0
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
+  glEnableVertexAttribArray(0);
+
+  // Configure info (color) for location 1
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
+                        (void *)(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
 
   // Used to store the indices to setup the vertices to create triangle
   uint EBO;
@@ -113,7 +129,6 @@ int main() {
                GL_STATIC_DRAW); // Copy info from CPU to GPU
 
   // Stop the configuration
-  glEnableVertexAttribArray(0);
 
   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -128,6 +143,11 @@ int main() {
 
     glfwSwapBuffers(window); // Swap the buffer
     glfwPollEvents();        // Get any events if avaialbe
+
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR) {
+      throw std::runtime_error(&"GL Error: "[err]);
+    }
   }
 
   glDeleteVertexArrays(1, &VAO);
