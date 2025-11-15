@@ -1,5 +1,6 @@
 #define GL_SILENCE_DEPRECATION
 #include "io.h"
+#include "shader.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <OpenGL/gl.h>
@@ -63,48 +64,7 @@ int main() {
 
   glEnable(GL_DEPTH_TEST);
 
-  const std::string vertexShaderCodeRaw = IO::getFullFileContents(VERTEX_PATH);
-  const std::string fragmentShaderCodeRaw =
-      IO::getFullFileContents(FRAGMENT_PATH);
-  const char *vertexShaderCode = vertexShaderCodeRaw.c_str();
-  const char *fragmentShaderCode = fragmentShaderCodeRaw.c_str();
-
-  uint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  uint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-  glShaderSource(vertexShader, 1, &vertexShaderCode, nullptr);
-  glShaderSource(fragmentShader, 1, &fragmentShaderCode, nullptr);
-
-  glCompileShader(vertexShader);
-  glCompileShader(fragmentShader);
-
-  int success;
-  char infoLog[512];
-
-  glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    glGetShaderInfoLog(vertexShader, 512, nullptr, infoLog);
-    throw std::runtime_error("Vertex compilation: " + std::string(infoLog));
-  }
-
-  glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog);
-    throw std::runtime_error("Fragment compilation: " + std::string(infoLog));
-  }
-
-  unsigned int shaderProgram = glCreateProgram();
-  glAttachShader(shaderProgram, vertexShader);
-  glAttachShader(shaderProgram, fragmentShader);
-  glLinkProgram(shaderProgram);
-  glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-  if (!success) {
-    glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-    throw std::runtime_error("Shader linking: " + std::string(infoLog));
-  }
-
-  glDeleteShader(vertexShader);
-  glDeleteShader(fragmentShader);
+  Shader shader(VERTEX_PATH, FRAGMENT_PATH);
   glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
   float vertices[] = {
@@ -162,9 +122,9 @@ int main() {
 
   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-  int uModel = glGetUniformLocation(shaderProgram, "uModel");
-  int uView = glGetUniformLocation(shaderProgram, "uView");
-  int uProjection = glGetUniformLocation(shaderProgram, "uProjection");
+  int uModel = glGetUniformLocation(shader.getId(), "uModel");
+  int uView = glGetUniformLocation(shader.getId(), "uView");
+  int uProjection = glGetUniformLocation(shader.getId(), "uProjection");
 
   while (!glfwWindowShouldClose(window)) {
     float currentFrame = glfwGetTime();
@@ -180,8 +140,8 @@ int main() {
     glm::mat4 projection = glm::perspective(
         glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
-    glUseProgram(shaderProgram); // Use the defined shaders in this program
-    glBindVertexArray(VAO);      // Get ready to draw with this VAO
+    glUseProgram(shader.getId()); // Use the defined shaders in this program
+    glBindVertexArray(VAO);       // Get ready to draw with this VAO
 
     glUniformMatrix4fv(uModel, 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(uView, 1, GL_FALSE, glm::value_ptr(view));
@@ -202,7 +162,7 @@ int main() {
   glDeleteVertexArrays(1, &VAO);
   glDeleteBuffers(1, &VBO);
   glDeleteBuffers(1, &EBO);
-  glDeleteProgram(shaderProgram);
+  glDeleteProgram(shader.getId());
 
   glfwTerminate();
   return EXIT_SUCCESS;
