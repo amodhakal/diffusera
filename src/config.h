@@ -10,8 +10,20 @@ constexpr auto FRAGMENT_PATH = "./shaders/shaders.frag";
 constexpr uint SCR_WIDTH = 800;
 constexpr uint SCR_HEIGHT = 600;
 
-constexpr float CAMERA_SPEED = 1.5;
-constexpr float CAMERA_SENSITIVITY = 0.1;
-
 constexpr auto BG_COLOR = glm::vec4(0.1, 0.1, 0.1, 1.0);
+
+namespace Camera {
+constexpr float SPEED = 1.5;
+constexpr float SENSITIVITY = 0.1;
+constexpr float NEAR = 0.1;
+constexpr float FAR = 100.0;
+
+constexpr float DEFAULT_FOV = 45;
+constexpr float DEFAULT_YAW = -90;
+constexpr float DEAULT_PITCH = 0;
+
+constexpr glm::vec3 DEFAULT_FRONT = {0, 0, -1};
+constexpr glm::vec3 DEFAULT_UP = {0, 1, 0};
+}  // namespace Camera
+
 }  // namespace Constants

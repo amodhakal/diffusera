@@ -1,4 +1,3 @@
-#include "config.h"
 #define GL_SILENCE_DEPRECATION
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -10,6 +9,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <stdexcept>
 
+#include "camera.h"
+#include "config.h"
 #include "shader.h"
 
 void handleResizeCallback(GLFWwindow* window, int width, int height);
@@ -19,14 +20,10 @@ void handleScrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 
 void processInput(GLFWwindow* window);
 
-bool isFirstMouse = true;
-float fov = 45.0f, yaw = -90.0f, pitch = 0.0f;
-float deltaTime = 0.0f, lastFrame = 0.0f;
-float lastX = Constants::SCR_WIDTH / 2.0f, lastY = Constants::SCR_HEIGHT / 2.0f;
+Camera camera({0, 0, 2});
 
-glm::vec3 cameraPosition = {0.0f, 0.0f, 2.0f};
-glm::vec3 cameraFront = {0.0f, 0.0f, -1.0f};
-glm::vec3 cameraUp = {0.0f, 1.0f, 0.0f};
+float deltaTime = 0.0f, lastFrame = 0.0f;
+float lastX = Constants::SCR_WIDTH / 2.0, lastY = Constants::SCR_HEIGHT / 2.0;
 
 int main() {
   glfwInit();
@@ -124,7 +121,6 @@ int main() {
 
   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-  int uModel = glGetUniformLocation(shader.getId(), "uModel");
   int uView = glGetUniformLocation(shader.getId(), "uView");
   int uProjection = glGetUniformLocation(shader.getId(), "uProjection");
 
@@ -136,18 +132,12 @@ int main() {
     processInput(window);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 view =
-        glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
-    glm::mat4 projection = glm::perspective(
-        glm::radians(fov),
-        (float)Constants::SCR_WIDTH / (float)Constants::SCR_HEIGHT, 0.1f,
-        100.0f);
+    glm::mat4 view = camera.getView();
+    glm::mat4 projection = camera.getProjection();
 
     glUseProgram(shader.getId());  // Use the defined shaders in this program
     glBindVertexArray(VAO);        // Get ready to draw with this VAO
 
-    glUniformMatrix4fv(uModel, 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(uView, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(uProjection, 1, GL_FALSE, glm::value_ptr(projection));
 
@@ -178,40 +168,11 @@ void handleResizeCallback(GLFWwindow* window, int width, int height) {
 
 void handleMouseCallback(GLFWwindow* window, double xPosition,
                          double yPosition) {
-  float xOffset = xPosition - lastX;
-  float yOffset = lastY - yPosition;
-
-  lastX = xPosition;
-  lastY = yPosition;
-
-  xOffset *= Constants::CAMERA_SENSITIVITY;
-  yOffset *= Constants::CAMERA_SENSITIVITY;
-
-  yaw += xOffset;
-  pitch += yOffset;
-
-  if (pitch > 89.0f) {
-    pitch = 89.0f;
-  }
-  if (pitch < -89.0f) {
-    pitch = -89.0f;
-  }
-
-  glm::vec3 front;
-  front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-  front.y = sin(glm::radians(pitch));
-  front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-  cameraFront = glm::normalize(front);
+  camera.processMouseInput(window, xPosition, yPosition);
 }
 
 void handleScrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
-  fov -= (float)yOffset;
-  if (fov < 1.0f) {
-    fov = 1.0f;
-  }
-  if (fov > 45.0f) {
-    fov = 45.0f;
-  }
+  camera.processScrollInput(window, xOffset, yOffset);
 }
 
 void processInput(GLFWwindow* window) {
@@ -220,26 +181,5 @@ void processInput(GLFWwindow* window) {
     return;
   }
 
-  float cameraSpeed = Constants::CAMERA_SPEED * deltaTime;
-
-  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-    cameraPosition += cameraSpeed * cameraFront;
-  }
-  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-    cameraPosition -= cameraSpeed * cameraFront;
-  }
-  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-    cameraPosition -=
-        glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-  }
-  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-    cameraPosition +=
-        glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-  }
-  if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-    cameraPosition[1] += cameraSpeed;
-  }
-  if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-    cameraPosition[1] -= cameraSpeed;
-  }
+  camera.processKeyInput(window);
 }
