@@ -4,16 +4,40 @@
 #include <OpenGL/gl.h>
 #include <cstdlib>
 #include <fstream>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <stdexcept>
 #include <string>
 #include <sys/types.h>
 
 void handleResizeCallback(GLFWwindow *window, int width, int height);
+void handleMouseCallback(GLFWwindow *window, double xPosition,
+                         double yPosition);
+void handleScrollCallback(GLFWwindow *window, double xOffset, double yOffset);
+
 void processInput(GLFWwindow *window);
 const std::string getFullFileContents(const char *filePath);
 
 constexpr auto VERTEX_PATH = "./shaders/shaders.vert";
 constexpr auto FRAGMENT_PATH = "./shaders/shaders.frag";
+
+// yaw *= xOffset;
+// pitch *= yOffset;
+
+constexpr uint SCR_WIDTH = 800, SCR_HEIGHT = 600;
+
+constexpr float CAMERA_SPEED = 1.5f;
+constexpr float CAMERA_SENSITIVITY = 0.1f;
+
+bool isFirstMouse = true;
+float fov = 45.0f, yaw = -90.0f, pitch = 0.0f;
+float deltaTime = 0.0f, lastFrame = 0.0f;
+float lastX = SCR_WIDTH / 2.0f, lastY = SCR_HEIGHT / 2.0f;
+
+glm::vec3 cameraPosition = {0.0f, 0.0f, 2.0f};
+glm::vec3 cameraFront = {0.0f, 0.0f, -1.0f};
+glm::vec3 cameraUp = {0.0f, 1.0f, 0.0f};
 
 int main() {
   glfwInit();
@@ -22,17 +46,25 @@ int main() {
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-  GLFWwindow *window = glfwCreateWindow(800, 600, "Linterra", nullptr, nullptr);
+  GLFWwindow *window =
+      glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Linterra", nullptr, nullptr);
   if (!window) {
     glfwTerminate();
     throw std::runtime_error("Failed GLFW window creation");
   }
 
   glfwMakeContextCurrent(window);
+
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  glfwSetCursorPosCallback(window, handleMouseCallback);
+  glfwSetScrollCallback(window, handleScrollCallback);
+
   glfwSetFramebufferSizeCallback(window, handleResizeCallback);
   if (glewInit() != GLEW_OK) {
     throw std::runtime_error("Failed to initialize GLEW");
   }
+
+  glEnable(GL_DEPTH_TEST);
 
   const std::string vertexShaderCodeRaw = getFullFileContents(VERTEX_PATH);
   const std::string fragmentShaderCodeRaw = getFullFileContents(FRAGMENT_PATH);
@@ -132,12 +164,31 @@ int main() {
 
   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+  int uModel = glGetUniformLocation(shaderProgram, "uModel");
+  int uView = glGetUniformLocation(shaderProgram, "uView");
+  int uProjection = glGetUniformLocation(shaderProgram, "uProjection");
+
   while (!glfwWindowShouldClose(window)) {
+    float currentFrame = glfwGetTime();
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
+
     processInput(window);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 view =
+        glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
+    glm::mat4 projection = glm::perspective(
+        glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
     glUseProgram(shaderProgram); // Use the defined shaders in this program
     glBindVertexArray(VAO);      // Get ready to draw with this VAO
+
+    glUniformMatrix4fv(uModel, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(uView, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(uProjection, 1, GL_FALSE, glm::value_ptr(projection));
+
     glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT,
                    0); // Draw the objects
 
@@ -163,9 +214,71 @@ void handleResizeCallback(GLFWwindow *window, int width, int height) {
   glViewport(0, 0, width, height);
 }
 
+void handleMouseCallback(GLFWwindow *window, double xPosition,
+                         double yPosition) {
+  float xOffset = xPosition - lastX;
+  float yOffset = lastY - yPosition;
+
+  lastX = xPosition;
+  lastY = yPosition;
+
+  xOffset *= CAMERA_SENSITIVITY;
+  yOffset *= CAMERA_SENSITIVITY;
+
+  yaw += xOffset;
+  pitch += yOffset;
+
+  if (pitch > 89.0f) {
+    pitch = 89.0f;
+  }
+  if (pitch < -89.0f) {
+    pitch = -89.0f;
+  }
+
+  glm::vec3 front;
+  front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+  front.y = sin(glm::radians(pitch));
+  front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+  cameraFront = glm::normalize(front);
+}
+
+void handleScrollCallback(GLFWwindow *window, double xOffset, double yOffset) {
+  fov -= (float)yOffset;
+  if (fov < 1.0f) {
+    fov = 1.0f;
+  }
+  if (fov > 45.0f) {
+    fov = 45.0f;
+  }
+}
+
 void processInput(GLFWwindow *window) {
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, true);
+    return;
+  }
+
+  float cameraSpeed = CAMERA_SPEED * deltaTime;
+
+  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+    cameraPosition += cameraSpeed * cameraFront;
+  }
+  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+    cameraPosition -= cameraSpeed * cameraFront;
+  }
+  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+    cameraPosition -=
+        glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+  }
+  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+    cameraPosition +=
+        glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+  }
+  if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+    cameraPosition[1] += cameraSpeed;
+  }
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+    cameraPosition[1] -= cameraSpeed;
   }
 }
 
