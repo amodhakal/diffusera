@@ -1,5 +1,8 @@
-#include <glm/gtc/type_ptr.hpp>
 #include "application.h"
+
+#include <glm/gtc/type_ptr.hpp>
+
+#include "shader.h"
 
 Application::Application(const char* title, const uint width, const uint height,
                          glm::vec4 bgColor)
@@ -41,9 +44,8 @@ Application::Application(const char* title, const uint width, const uint height,
   glEnable(GL_DEPTH_TEST);
   glClearColor(bgColor[0], bgColor[1], bgColor[2], bgColor[3]);
 
-  m_Uniforms["uView"] = glGetUniformLocation(m_Shader.getId(), "uView");
-  m_Uniforms["uProjection"] =
-      glGetUniformLocation(m_Shader.getId(), "uProjection");
+  m_Shader.newUniform("uView");
+  m_Shader.newUniform("uProjection");
 }
 
 Application::~Application() {
@@ -59,14 +61,12 @@ void Application::update() {
   handleKeyPress(deltaTime);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  // TODO Optimize this
   m_ChunkManager.render();
 
   glm::mat4 view = m_Camera.getView();
+  m_Shader.setUniformMat4("uView", glm::value_ptr(view));
   glm::mat4 projection = m_Camera.getProjection();
-  glUniformMatrix4fv(m_Uniforms["uView"], 1, GL_FALSE, glm::value_ptr(view));
-  glUniformMatrix4fv(m_Uniforms["uProjection"], 1, GL_FALSE,
-                     glm::value_ptr(projection));
+  m_Shader.setUniformMat4("uProjection", glm::value_ptr(projection));
 
   glfwSwapBuffers(m_Window);
   glfwPollEvents();

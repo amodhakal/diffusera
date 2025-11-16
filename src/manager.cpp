@@ -42,6 +42,22 @@ void ChunkManager::update() {
   // auto chunkData = chunk1.getVboData();
   // m_VboData.insert(m_VboData.end(), chunkData.begin(), chunkData.end());
 
+  // TODO: Setup properly
+  m_VboData = {
+      // Vertex 1
+      -0.5f, 0.0f, -0.5f,  // position
+      0.0f, 1.0f, 0.0f,    // normal
+      0.0f, 0.0f, 1.0f,    // color (blue)
+      // Vertex 2
+      0.0f, 0.0f, 0.5f,  // position
+      0.0f, 1.0f, 0.0f,  // normal
+      0.0f, 0.0f, 1.0f,  // color (blue)
+      // Vertex 3
+      0.5f, 0.0f, -0.5f,  // position
+      0.0f, 1.0f, 0.0f,   // normal
+      0.0f, 0.0f, 1.0f    // color (blue)
+  };
+
   glBindVertexArray(m_VAO);
   glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
   glBufferData(GL_ARRAY_BUFFER, m_VboData.size() * sizeof(float),

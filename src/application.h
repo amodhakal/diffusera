@@ -7,8 +7,6 @@
 #include <sys/types.h>
 
 #include <print>
-#include <string>
-#include <unordered_map>
 
 #include "camera.h"
 #include "config.h"
@@ -32,8 +30,6 @@ class Application {
   Shader m_Shader;
   ChunkManager m_ChunkManager;
   Camera m_Camera;
-
-  std::unordered_map<std::string, int> m_Uniforms;
 
   uint m_FpsAttempts;
   float m_CombinedDeltaTime;

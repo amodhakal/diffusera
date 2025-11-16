@@ -30,7 +30,7 @@ uint setupShaders(const char* filePath, const uint shaderType) {
   return shader;
 }
 
-Shader::Shader() {
+Shader::Shader() : m_Uniforms({}) {
 }
 
 void Shader::load(const char* vertexPath, const char* fragmentPath) {
@@ -58,4 +58,12 @@ void Shader::load(const char* vertexPath, const char* fragmentPath) {
 
 uint Shader::getId() {
   return m_Id;
+}
+
+void Shader::newUniform(const char* name) {
+  m_Uniforms[name] = glGetUniformLocation(m_Id, name);
+}
+
+void Shader::setUniformMat4(const char* name, float* values) {
+  glUniformMatrix4fv(m_Uniforms[name], 1, GL_FALSE, values);
 }

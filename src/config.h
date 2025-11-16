@@ -27,7 +27,7 @@ constexpr float PITCH_MIN = -89.0;
 constexpr float FOV_MIN = 1.0;
 constexpr float FOV_MAX = 45.0;
 
-constexpr glm::vec3 DEFAULT_POSITION = {8, 1, 64};
+constexpr glm::vec3 DEFAULT_POSITION = {-0.5, 0.4,  5};
 constexpr glm::vec3 DEFAULT_FRONT = {0, 0, -1};
 constexpr glm::vec3 DEFAULT_UP = {0, 1, 0};
 }  // namespace Camera
