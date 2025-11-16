@@ -22,9 +22,11 @@ void handleScrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 
 void processInput(GLFWwindow* window);
 
-Camera camera({8, 1, 20});
-
 float deltaTime = 0.0f, lastFrame = 0.0f;
+
+struct ApplicationContext {
+  Camera camera;
+};
 
 int main() {
   glfwInit();
@@ -57,11 +59,13 @@ int main() {
   glClearColor(Constants::BG_COLOR[0], Constants::BG_COLOR[1],
                Constants::BG_COLOR[2], Constants::BG_COLOR[3]);
 
+  // Create a context for camera and pass it to the window
+  ApplicationContext context = {.camera = Camera({8, 1, 20})};
+  glfwSetWindowUserPointer(window, &context);
+
   Shader shader(Constants::VERTEX_PATH, Constants::FRAGMENT_PATH);
   ChunkManager chunkManager(shader);
   chunkManager.draw();
-
-  
 
   int uView = glGetUniformLocation(shader.getId(), "uView");
   int uProjection = glGetUniformLocation(shader.getId(), "uProjection");
@@ -87,8 +91,8 @@ int main() {
     processInput(window);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 view = camera.getView();
-    glm::mat4 projection = camera.getProjection();
+    glm::mat4 view = context.camera.getView();
+    glm::mat4 projection = context.camera.getProjection();
 
     chunkManager.render();
     glUniformMatrix4fv(uView, 1, GL_FALSE, glm::value_ptr(view));
@@ -114,11 +118,17 @@ void handleResizeCallback(GLFWwindow* window, int width, int height) {
 
 void handleMouseCallback(GLFWwindow* window, double xPosition,
                          double yPosition) {
-  camera.processMouseInput(window, xPosition, yPosition);
+  auto* context =
+      static_cast<ApplicationContext*>(glfwGetWindowUserPointer(window));
+
+  context->camera.processMouseInput(window, xPosition, yPosition);
 }
 
 void handleScrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
-  camera.processScrollInput(window, xOffset, yOffset);
+  auto* context =
+      static_cast<ApplicationContext*>(glfwGetWindowUserPointer(window));
+
+  context->camera.processScrollInput(window, xOffset, yOffset);
 }
 
 void processInput(GLFWwindow* window) {
@@ -127,5 +137,7 @@ void processInput(GLFWwindow* window) {
     return;
   }
 
-  camera.processKeyInput(window, deltaTime);
+  auto* context =
+      static_cast<ApplicationContext*>(glfwGetWindowUserPointer(window));
+  context->camera.processKeyInput(window, deltaTime);
 }
