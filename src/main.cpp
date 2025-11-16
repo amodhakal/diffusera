@@ -10,6 +10,7 @@
 #include <print>
 #include <stdexcept>
 
+#include "asset.h"
 #include "camera.h"
 #include "config.h"
 #include "shader.h"
@@ -21,7 +22,7 @@ void handleScrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 
 void processInput(GLFWwindow* window);
 
-Camera camera({0, 0, 2});
+Camera camera({0, 0, 5});
 
 float deltaTime = 0.0f, lastFrame = 0.0f;
 
@@ -58,32 +59,8 @@ int main() {
   glClearColor(Constants::BG_COLOR[0], Constants::BG_COLOR[1],
                Constants::BG_COLOR[2], Constants::BG_COLOR[3]);
 
-  float vertices[] = {
-      // First rectangle (RED)
-      // Triangle 1
-      0.625f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // Top Right
-      0.625f, -0.125f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-      1.0f,                                                      // Bottom Right
-      0.375f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // Top Left
-      // Triangle 2
-      0.625f, -0.125f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-      1.0f,  // Bottom Right
-      0.375f, -0.125f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // Bottom Left
-      0.375f, 0.125f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,   // Top Left
-
-      // Second rectangle (GREEN)
-      // Triangle 1
-      -0.375f, 0.125f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f,  // Top Right
-      -0.375f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-      -1.0f,  // Bottom Right
-      -0.625f, 0.125f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f,  // Top Left
-                                                                   // Triangle 2
-      -0.375f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-      -1.0f,  // Bottom Right
-      -0.625f, -0.125f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-      -1.0f,  // Bottom Left
-      -0.625f, 0.125f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f,  // Top Left
-  };
+  std::vector vertices = getVertices({0, 0, 2}, {0.4, 0.6, 0.9});
+  vertices.data();
 
   // Used to manage everything (VBO) in 1 place
   uint VAO;
@@ -96,7 +73,7 @@ int main() {
   uint VBO;
   glGenBuffers(1, &VBO);               // Creates a buffer on the gpu
   glBindBuffer(GL_ARRAY_BUFFER, VBO);  // Binds to VAO
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices,
+  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(),
                GL_STATIC_DRAW);  // Copy info from CPU to GPU
 
   // Configure info (vertex) for location 0
@@ -146,10 +123,7 @@ int main() {
     glUniformMatrix4fv(uView, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(uProjection, 1, GL_FALSE, glm::value_ptr(projection));
 
-    int verticeCount =
-        sizeof(vertices) /
-        (9 * sizeof(float));  // Correct calculation for vertex count
-    glDrawArrays(GL_TRIANGLES, 0, verticeCount);
+    glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 9);
 
     glfwSwapBuffers(window);  // Swap the buffer
     glfwPollEvents();         // Get any events if avaialbe
