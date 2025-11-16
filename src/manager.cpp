@@ -7,8 +7,11 @@
 
 #include "chunk.h"
 
-ChunkManager::ChunkManager(const Shader &shader)
-    : m_Shader(shader), m_VboData({}) {
+ChunkManager::ChunkManager() : m_VboData({}) {
+}
+
+void ChunkManager::load(const Shader &shader) {
+  m_Shader = shader;
   glGenVertexArrays(1, &m_VAO);
   glGenBuffers(1, &m_VBO);
 }

@@ -30,7 +30,10 @@ uint setupShaders(const char* filePath, const uint shaderType) {
   return shader;
 }
 
-Shader::Shader(const char* vertexPath, const char* fragmentPath) {
+Shader::Shader() {
+}
+
+void Shader::load(const char* vertexPath, const char* fragmentPath) {
   uint vertexShader = setupShaders(vertexPath, GL_VERTEX_SHADER);
   uint fragmentShader = setupShaders(fragmentPath, GL_FRAGMENT_SHADER);
 

@@ -16,7 +16,7 @@ Camera::Camera(glm::vec3 position) {
   m_IsFirstMouse = true;
 }
 
-void Camera::processMouseInput(GLFWwindow *window, double xPosition,
+void Camera::processMouseInput(double xPosition,
                                double yPosition) {
   float xOffset = xPosition - m_LastX;
   float yOffset = m_LastY - yPosition;
@@ -40,7 +40,7 @@ void Camera::processMouseInput(GLFWwindow *window, double xPosition,
   m_Front = glm::normalize(front);
 }
 
-void Camera::processScrollInput(GLFWwindow *window, double xOffset,
+void Camera::processScrollInput(double xOffset,
                                 double yOffset) {
   m_Fov -= yOffset;
   m_Fov = fmax(m_Fov, Constants::Camera::FOV_MIN);

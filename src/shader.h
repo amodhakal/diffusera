@@ -3,7 +3,8 @@
 
 class Shader {
  public:
-  Shader(const char* vertexPath, const char* fragmentPath);
+  Shader();
+  void load(const char* vertexPath, const char* fragmentPath);
   uint getId();
 
  private:

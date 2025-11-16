@@ -1,11 +1,14 @@
 #pragma once
-#include <vector>
 #include <sys/types.h>
+
+#include <vector>
+
 #include "shader.h"
 
 class ChunkManager {
  public:
-  ChunkManager(const Shader &shader);
+  ChunkManager();
+  void load(const Shader &shader);
   void draw();
   void render();
 
