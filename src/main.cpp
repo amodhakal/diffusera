@@ -43,7 +43,7 @@ int main() {
 
   glfwMakeContextCurrent(window);
   glfwSwapInterval(0);  // Disable V-Sync
-  // glEnable(GL_DEPTH_TEST);
+  glEnable(GL_DEPTH_TEST);
 
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
   glfwSetCursorPosCallback(window, handleMouseCallback);
@@ -73,7 +73,8 @@ int main() {
   uint VBO;
   glGenBuffers(1, &VBO);               // Creates a buffer on the gpu
   glBindBuffer(GL_ARRAY_BUFFER, VBO);  // Binds to VAO
-  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(),
+  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float),
+               vertices.data(),
                GL_STATIC_DRAW);  // Copy info from CPU to GPU
 
   // Configure info (vertex) for location 0
@@ -105,8 +106,10 @@ int main() {
 
     combinedDeltaTime += deltaTime;
     attempts++;
-    if (attempts > 100) {
-      std::println("FPS: {}", std::to_string(1 / (combinedDeltaTime / 100)));
+    constexpr uint MAX_ATTEMPTS = 1000;
+    if (attempts > MAX_ATTEMPTS) {
+      std::println("FPS: {}",
+                   std::to_string(1 / (combinedDeltaTime / MAX_ATTEMPTS)));
       combinedDeltaTime = 0;
       attempts = 0;
     }
