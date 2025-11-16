@@ -1,3 +1,4 @@
+#include "chunk.h"
 #define GL_SILENCE_DEPRECATION
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -22,7 +23,7 @@ void handleScrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 
 void processInput(GLFWwindow* window);
 
-Camera camera({0, 0, 5});
+Camera camera({0, 1, 5});
 
 float deltaTime = 0.0f, lastFrame = 0.0f;
 
@@ -60,14 +61,9 @@ int main() {
                Constants::BG_COLOR[2], Constants::BG_COLOR[3]);
 
   std::vector<float> vertices;
+  Chunk chunk1(0, 0);
   vertices.insert_range(vertices.end(),
-                        getVertices({0, 0, 2}, {0.4, 0.6, 0.9}));
-  vertices.insert_range(vertices.end(),
-                        getVertices({0, 1, 2}, {0.4, 0.6, 0.9}));
-  vertices.insert_range(vertices.end(),
-                        getVertices({0, 0, 3}, {0.4, 0.6, 0.9}));
-  vertices.insert_range(vertices.end(),
-                        getVertices({1, 0, 2}, {0.4, 0.6, 0.9}));
+                        chunk1.getVboData());
 
   // Used to manage everything (VBO) in 1 place
   uint VAO;

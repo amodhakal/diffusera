@@ -31,4 +31,10 @@ constexpr glm::vec3 DEFAULT_FRONT = {0, 0, -1};
 constexpr glm::vec3 DEFAULT_UP = {0, 1, 0};
 }  // namespace Camera
 
+namespace Chunk {
+constexpr uint WIDTH = 16;
+constexpr uint LENGTH = 16;
+constexpr uint HEIGHT = 256;
+}  // namespace Chunk
+
 }  // namespace Constants
