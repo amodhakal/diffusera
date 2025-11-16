@@ -90,9 +90,6 @@ Application::Application(const char* title, const uint width, const uint height,
   glEnable(GL_DEPTH_TEST);
   glClearColor(bgColor[0], bgColor[1], bgColor[2], bgColor[3]);
 
-  // TODO Initialization shouldn't draw the chunks
-  m_ChunkManager.draw();
-
   m_Uniforms["uView"] = glGetUniformLocation(m_Shader.getId(), "uView");
   m_Uniforms["uProjection"] =
       glGetUniformLocation(m_Shader.getId(), "uProjection");

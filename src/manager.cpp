@@ -5,9 +5,7 @@
 #include <GLFW/glfw3.h>
 #include <OpenGL/gl.h>
 
-#include "chunk.h"
-
-ChunkManager::ChunkManager() : m_VboData({}) {
+ChunkManager::ChunkManager() : m_VboData({}), m_IsLatest(false) {
 }
 
 void ChunkManager::load(const Shader &shader) {
@@ -17,9 +15,21 @@ void ChunkManager::load(const Shader &shader) {
 }
 
 /**
- * Recalculates all of the vbo data for rendering
+ * Displays the vbo data to the screen
  */
-void ChunkManager::draw() {
+void ChunkManager::render() {
+  update();
+
+  glUseProgram(m_Shader.getId());
+  glBindVertexArray(m_VAO);
+  glDrawArrays(GL_TRIANGLES, 0, m_VboData.size() / 9);
+}
+
+void ChunkManager::update() {
+  if (m_IsLatest) {
+    return;
+  }
+
   // Clear the previous vbo data
   // TODO: Optimize such that outside render distance chunks are removed and new
   // chunks are rendered
@@ -28,9 +38,9 @@ void ChunkManager::draw() {
   // TODO: Do not show the faces who are covered
 
   m_VboData.clear();
-  Chunk chunk1(0, 0);
-  auto chunkData = chunk1.getVboData();
-  m_VboData.insert(m_VboData.end(), chunkData.begin(), chunkData.end());
+  // Chunk chunk1(0, 0);
+  // auto chunkData = chunk1.getVboData();
+  // m_VboData.insert(m_VboData.end(), chunkData.begin(), chunkData.end());
 
   glBindVertexArray(m_VAO);
   glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
@@ -48,13 +58,6 @@ void ChunkManager::draw() {
   glEnableVertexAttribArray(2);
 
   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-}
 
-/**
- * Displays the vbo data to the screen
- */
-void ChunkManager::render() {
-  glUseProgram(m_Shader.getId());
-  glBindVertexArray(m_VAO);
-  glDrawArrays(GL_TRIANGLES, 0, m_VboData.size() / 9);
+  m_IsLatest = true;
 }
