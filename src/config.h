@@ -13,8 +13,8 @@ constexpr uint SCR_HEIGHT = 600;
 constexpr auto BG_COLOR = glm::vec4(0.1, 0.1, 0.1, 1.0);
 
 namespace Camera {
-constexpr float SPEED = 1.5;
-constexpr float SENSITIVITY = 0.1;
+constexpr float SPEED = 2.5;
+constexpr float SENSITIVITY = 0.2;
 constexpr float NEAR = 0.1;
 constexpr float FAR = 100.0;
 

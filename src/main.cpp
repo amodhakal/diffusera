@@ -59,8 +59,15 @@ int main() {
   glClearColor(Constants::BG_COLOR[0], Constants::BG_COLOR[1],
                Constants::BG_COLOR[2], Constants::BG_COLOR[3]);
 
-  std::vector vertices = getVertices({0, 0, 2}, {0.4, 0.6, 0.9});
-  vertices.data();
+  std::vector<float> vertices;
+  vertices.insert_range(vertices.end(),
+                        getVertices({0, 0, 2}, {0.4, 0.6, 0.9}));
+  vertices.insert_range(vertices.end(),
+                        getVertices({0, 1, 2}, {0.4, 0.6, 0.9}));
+  vertices.insert_range(vertices.end(),
+                        getVertices({0, 0, 3}, {0.4, 0.6, 0.9}));
+  vertices.insert_range(vertices.end(),
+                        getVertices({1, 0, 2}, {0.4, 0.6, 0.9}));
 
   // Used to manage everything (VBO) in 1 place
   uint VAO;
