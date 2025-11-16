@@ -22,10 +22,11 @@ void handleScrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 
 void processInput(GLFWwindow* window);
 
-float deltaTime = 0.0f, lastFrame = 0.0f;
-
 struct ApplicationContext {
   Camera camera;
+
+  float deltaTime;
+  float lastFrame;
 };
 
 int main() {
@@ -60,7 +61,8 @@ int main() {
                Constants::BG_COLOR[2], Constants::BG_COLOR[3]);
 
   // Create a context for camera and pass it to the window
-  ApplicationContext context = {.camera = Camera({8, 1, 20})};
+  ApplicationContext context = {
+      .camera = Camera({8, 1, 20}), .deltaTime = 0, .lastFrame = 0};
   glfwSetWindowUserPointer(window, &context);
 
   Shader shader(Constants::VERTEX_PATH, Constants::FRAGMENT_PATH);
@@ -75,10 +77,10 @@ int main() {
 
   while (!glfwWindowShouldClose(window)) {
     float currentFrame = glfwGetTime();
-    deltaTime = currentFrame - lastFrame;
-    lastFrame = currentFrame;
+    context.deltaTime = currentFrame - context.lastFrame;
+    context.lastFrame = currentFrame;
 
-    combinedDeltaTime += deltaTime;
+    combinedDeltaTime += context.deltaTime;
     attempts++;
     constexpr uint MAX_ATTEMPTS = 1000;
     if (attempts > MAX_ATTEMPTS) {
@@ -139,5 +141,5 @@ void processInput(GLFWwindow* window) {
 
   auto* context =
       static_cast<ApplicationContext*>(glfwGetWindowUserPointer(window));
-  context->camera.processKeyInput(window, deltaTime);
+  context->camera.processKeyInput(window, context->deltaTime);
 }
