@@ -1,4 +1,4 @@
-#include "chunk.h"
+#include "manager.h"
 #define GL_SILENCE_DEPRECATION
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -11,7 +11,6 @@
 #include <print>
 #include <stdexcept>
 
-#include "asset.h"
 #include "camera.h"
 #include "config.h"
 #include "shader.h"
@@ -23,7 +22,7 @@ void handleScrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 
 void processInput(GLFWwindow* window);
 
-Camera camera({0, 1, 5});
+Camera camera({8, 1, 20});
 
 float deltaTime = 0.0f, lastFrame = 0.0f;
 
@@ -55,46 +54,14 @@ int main() {
     throw std::runtime_error("Failed to initialize GLEW");
   }
 
-  Shader shader(Constants::VERTEX_PATH, Constants::FRAGMENT_PATH);
-
   glClearColor(Constants::BG_COLOR[0], Constants::BG_COLOR[1],
                Constants::BG_COLOR[2], Constants::BG_COLOR[3]);
 
-  std::vector<float> vertices;
-  Chunk chunk1(0, 0);
-  vertices.insert_range(vertices.end(),
-                        chunk1.getVboData());
+  Shader shader(Constants::VERTEX_PATH, Constants::FRAGMENT_PATH);
+  ChunkManager chunkManager(shader);
+  chunkManager.draw();
 
-  // Used to manage everything (VBO) in 1 place
-  uint VAO;
-  glGenVertexArrays(1, &VAO);
-
-  // Start the configuration
-  glBindVertexArray(VAO);
-
-  // Used to store vertex info to be sent to the gpu
-  uint VBO;
-  glGenBuffers(1, &VBO);               // Creates a buffer on the gpu
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);  // Binds to VAO
-  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float),
-               vertices.data(),
-               GL_STATIC_DRAW);  // Copy info from CPU to GPU
-
-  // Configure info (vertex) for location 0
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(0);
-
-  // Configure info (color) for location 1
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float),
-                        (void*)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
-  // Configure info (normal) for location 2
-  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float),
-                        (void*)(6 * sizeof(float)));
-  glEnableVertexAttribArray(2);
-
-  // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  
 
   int uView = glGetUniformLocation(shader.getId(), "uView");
   int uProjection = glGetUniformLocation(shader.getId(), "uProjection");
@@ -123,13 +90,9 @@ int main() {
     glm::mat4 view = camera.getView();
     glm::mat4 projection = camera.getProjection();
 
-    glUseProgram(shader.getId());
-    glBindVertexArray(VAO);
-
+    chunkManager.render();
     glUniformMatrix4fv(uView, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(uProjection, 1, GL_FALSE, glm::value_ptr(projection));
-
-    glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 9);
 
     glfwSwapBuffers(window);  // Swap the buffer
     glfwPollEvents();         // Get any events if avaialbe
@@ -140,10 +103,6 @@ int main() {
       throw std::runtime_error("OpenGL Error: " + error);
     }
   }
-
-  glDeleteVertexArrays(1, &VAO);
-  glDeleteBuffers(1, &VBO);
-  glDeleteProgram(shader.getId());
 
   glfwTerminate();
   return EXIT_SUCCESS;

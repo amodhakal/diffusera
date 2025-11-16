@@ -18,23 +18,17 @@ class Chunk {
   std::vector<float> getVboData();
 
  private:
-  Block m_Blocks[Constants::Chunk::HEIGHT][Constants::Chunk::WIDTH]
-                [Constants::Chunk::LENGTH];
+  Block m_Blocks[Constants::Chunk::Y_SIZE][Constants::Chunk::Z_SIZE]
+                [Constants::Chunk::X_SIZE];
   void setBlock(uint length, uint width, uint height, Block block);
   Block getBlock(uint length, uint width, uint height);
 };
 
 Chunk::Chunk(int xPosition, int yPosition) {
-  for (uint width = 0; width < Constants::Chunk::WIDTH; width++) {
-    for (uint length = 0; length < Constants::Chunk::LENGTH; length++) {
-      setBlock(length, width, 0, Block::GRASS);
-    }
-  }
-
-  for (uint height = 1; height < Constants::Chunk::HEIGHT; height++) {
-    for (uint width = 0; width < Constants::Chunk::WIDTH; width++) {
-      for (uint length = 0; length < Constants::Chunk::LENGTH; length++) {
-        setBlock(length, width, height, Block::AIR);
+  for (uint height = 0; height < Constants::Chunk::Y_SIZE; height++) {
+    for (uint width = 0; width < Constants::Chunk::Z_SIZE; width++) {
+      for (uint length = 0; length < Constants::Chunk::X_SIZE; length++) {
+        setBlock(length, width, height, Block::GRASS);
       }
     }
   }
@@ -43,9 +37,9 @@ Chunk::Chunk(int xPosition, int yPosition) {
 std::vector<float> Chunk::getVboData() {
   std::vector<float> data;
 
-  for (uint height = 0; height < Constants::Chunk::HEIGHT; height++) {
-    for (uint width = 0; width < Constants::Chunk::WIDTH; width++) {
-      for (uint length = 0; length < Constants::Chunk::LENGTH; length++) {
+  for (uint height = 0; height < Constants::Chunk::Y_SIZE; height++) {
+    for (uint width = 0; width < Constants::Chunk::Z_SIZE; width++) {
+      for (uint length = 0; length < Constants::Chunk::X_SIZE; length++) {
         Block block = getBlock(length, width, height);
         if (block == Block::AIR) {
           continue;
