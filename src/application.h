@@ -24,7 +24,7 @@ class Application {
   ~Application();
 
   bool isRunning();
-  void run();
+  void update();
 
   Camera* getCamera();
 
@@ -106,7 +106,7 @@ bool Application::isRunning() {
   return !glfwWindowShouldClose(m_Window);
 }
 
-void Application::run() {
+void Application::update() {
   float deltaTime = getDeltaTime();
   handleKeyPress(deltaTime);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
