@@ -27,7 +27,7 @@ constexpr float PITCH_MIN = -89.0;
 constexpr float FOV_MIN = 1.0;
 constexpr float FOV_MAX = 45.0;
 
-constexpr glm::vec3 DEFAULT_POSITION = {-0.5, 0.4,  5};
+constexpr glm::vec3 DEFAULT_POSITION = {-0.5, 0.4, 5};
 constexpr glm::vec3 DEFAULT_FRONT = {0, 0, -1};
 constexpr glm::vec3 DEFAULT_UP = {0, 1, 0};
 }  // namespace Camera
@@ -35,7 +35,8 @@ constexpr glm::vec3 DEFAULT_UP = {0, 1, 0};
 namespace Chunk {
 constexpr uint LENGTH = 16;
 constexpr uint HEIGHT = 256;
-constexpr uint RENDER_DISTANCE = 4;
+constexpr uint RENDER_DISTANCE_CHUNKS = 4;
+constexpr uint RENDER_DISTANCE_BLOCKS = RENDER_DISTANCE_CHUNKS * LENGTH;
 }  // namespace Chunk
 
 }  // namespace Constants
