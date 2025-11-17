@@ -42,7 +42,7 @@ This first milestone was successfully completed and focused on creating a robust
 
 1.  **Prerequisites:**
 
-    - **macOS** (tested on version X.Y)
+    - **macOS** 26.1
     - A C++ compiler supporting C++20 (e.g., Clang)
     - CMake 3.15+
     - Homebrew for dependency management is recommended:
