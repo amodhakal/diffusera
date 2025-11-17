@@ -13,6 +13,7 @@ class Camera {
 
   glm::mat4 getView();
   glm::mat4 getProjection();
+  const glm::vec3 getPosition();
 
  private:
   glm::vec3 m_Position, m_Front, m_Up;

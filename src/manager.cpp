@@ -1,11 +1,16 @@
 #include "manager.h"
 
+#include <cmath>
+
+#include "chunk.h"
+#include "config.h"
+
 #define GL_SILENCE_DEPRECATION
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <OpenGL/gl.h>
 
-ChunkManager::ChunkManager() : m_VboData({}), m_IsLatest(false) {
+ChunkManager::ChunkManager() : m_VboData({}), m_IsLatest(false), m_Chunks({}) {
 }
 
 void ChunkManager::load(const Shader &shader) {
@@ -17,17 +22,36 @@ void ChunkManager::load(const Shader &shader) {
 /**
  * Displays the vbo data to the screen
  */
-void ChunkManager::render() {
-  update();
+void ChunkManager::render(glm::vec3 position) {
+  update(position);
 
   glUseProgram(m_Shader.getId());
   glBindVertexArray(m_VAO);
   glDrawArrays(GL_TRIANGLES, 0, m_VboData.size() / 9);
 }
 
-void ChunkManager::update() {
+void ChunkManager::update(glm::vec3 position) {
   if (m_IsLatest) {
     return;
+  }
+
+  m_VboData.clear();
+  int currentChunkX = position.x / Constants::Chunk::LENGTH;
+  int currentChunkZ = position.z / Constants::Chunk::LENGTH;
+
+  for (const auto &value : m_Chunks) {
+    ChunkPosition position = value.first;
+    Chunk chunk = value.second;
+
+    int chunkVectorX = position.xPosition - currentChunkX;
+    int chunkVectorY = position.xPosition - currentChunkZ;
+    float chunkDistanceSquared = pow(chunkVectorX, 2) * pow(chunkVectorY, 2);
+
+    // Delete chunk if out of render distance
+    if (chunkDistanceSquared >
+        Constants::Chunk::RENDER_DISTANCE * Constants::Chunk::RENDER_DISTANCE) {
+      m_Chunks.erase(position);
+    }
   }
 
   // Clear the previous vbo data
@@ -37,7 +61,6 @@ void ChunkManager::update() {
   // properly
   // TODO: Do not show the faces who are covered
 
-  m_VboData.clear();
   // Chunk chunk1(0, 0);
   // auto chunkData = chunk1.getVboData();
   // m_VboData.insert(m_VboData.end(), chunkData.begin(), chunkData.end());

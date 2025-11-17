@@ -1,5 +1,6 @@
-#include "config.h"
 #include "camera.h"
+
+#include "config.h"
 
 Camera::Camera(glm::vec3 position) {
   m_Position = position;
@@ -76,4 +77,8 @@ glm::mat4 Camera::getProjection() {
   float aspect = (float)Constants::SCR_WIDTH / (float)Constants::SCR_HEIGHT;
   return glm::perspective(glm::radians(m_Fov), aspect, Constants::Camera::NEAR,
                           Constants::Camera::FAR);
+}
+
+const glm::vec3 Camera::getPosition() {
+  return this->m_Position;
 }

@@ -33,10 +33,9 @@ constexpr glm::vec3 DEFAULT_UP = {0, 1, 0};
 }  // namespace Camera
 
 namespace Chunk {
-constexpr uint X_SIZE = 16;
-constexpr uint Y_SIZE = 256;
-constexpr uint Z_SIZE = 16;
-constexpr uint RENDER_DISTANCE = 16;
+constexpr uint LENGTH = 16;
+constexpr uint HEIGHT = 256;
+constexpr uint RENDER_DISTANCE = 4;
 }  // namespace Chunk
 
 }  // namespace Constants

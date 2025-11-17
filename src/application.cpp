@@ -61,7 +61,7 @@ void Application::update() {
   handleKeyPress(deltaTime);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  m_ChunkManager.render();
+  m_ChunkManager.render(m_Camera.getPosition());
 
   glm::mat4 view = m_Camera.getView();
   m_Shader.setUniformMat4("uView", glm::value_ptr(view));
