@@ -35,7 +35,7 @@ constexpr glm::vec3 DEFAULT_UP = {0, 1, 0};
 namespace Chunk {
 constexpr int LENGTH = 16;
 constexpr int HEIGHT = 256;
-constexpr int RENDER_DISTANCE_CHUNKS = 8;
+constexpr int RENDER_DISTANCE_CHUNKS = 3;
 constexpr int RENDER_DISTANCE_BLOCKS = RENDER_DISTANCE_CHUNKS * LENGTH;
 }  // namespace Chunk
 
