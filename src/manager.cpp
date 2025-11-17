@@ -36,6 +36,16 @@ void ChunkManager::render(glm::vec3 cameraPosition) {
     ++it;
   }
 
+  /* TODO Instead of creating a chunk as such. Have another thread to generate
+     the block info and the cleaned up mesh, which is then sent to a complete
+     queue.
+
+     The render() function checks for any items in the completed queue, as
+     creaitng a chunk based on the mesh and the blocks.
+
+     You will need to know which positions you have asked for, so you don't ask
+     again for the same chunk */
+
   int currentChunkX =
       static_cast<int>(std::floor(cameraPosition.x / Constants::Chunk::LENGTH));
   int currentChunkZ =
