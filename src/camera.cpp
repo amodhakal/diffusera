@@ -69,8 +69,6 @@ void Camera::processKeyInput(GLFWwindow *window, float deltaTime) {
   if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
     m_Position[1] -= cameraSpeed;
   }
-
-  std::println("Camera: {}, {}, {}", m_Position.x, m_Position.y, m_Position.z);
 }
 
 glm::mat4 Camera::getView() {

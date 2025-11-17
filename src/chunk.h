@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 #include <sys/types.h>
 
 #include <vector>
@@ -9,11 +7,25 @@
 struct ChunkPosition {
   int xPosition;
   int zPosition;
+
+  bool operator==(const ChunkPosition& other) const {
+    return xPosition == other.xPosition && zPosition == other.zPosition;
+  }
+};
+
+template <>
+struct std::hash<ChunkPosition> {
+  std::size_t operator()(const ChunkPosition& pos) const noexcept {
+    std::size_t h1 = std::hash<int>{}(pos.xPosition);
+    std::size_t h2 = std::hash<int>{}(pos.zPosition);
+    return h1 ^ (h2 << 1);
+  }
 };
 
 class Chunk {
  public:
-  Chunk(const ChunkPosition &position);
+  Chunk() = default;
+  Chunk(const ChunkPosition& position);
   void render();
 
  private:

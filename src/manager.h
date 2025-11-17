@@ -1,6 +1,9 @@
 #pragma once
 #include <sys/types.h>
 
+#include <unordered_map>
+
+#include "chunk.h"
 #include "shader.h"
 
 class ChunkManager {
@@ -11,4 +14,5 @@ class ChunkManager {
 
  private:
   Shader m_Shader;
+  std::unordered_map<ChunkPosition, Chunk> m_Chunks;
 };

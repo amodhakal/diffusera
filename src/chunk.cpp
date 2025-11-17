@@ -10,22 +10,26 @@ Chunk::Chunk(const ChunkPosition &position) {
   float baseX = position.xPosition * Constants::Chunk::LENGTH;
   float baseZ = position.zPosition * Constants::Chunk::LENGTH;
   m_VboData = {
-    // First triangle
-    // Bottom-left
-    baseX, 0.0f, baseZ, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-    // Bottom-right
-    baseX + Constants::Chunk::LENGTH, 0.0f, baseZ, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-    // Top-left
-    baseX, 0.0f, baseZ + Constants::Chunk::LENGTH, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+      // First triangle
+      // Bottom-left
+      baseX, 0.0f, baseZ, 0.0f, 0.0f, 1.0f, 0.0f, 0.6f, 0.1f,
+      // Bottom-right
+      baseX + Constants::Chunk::LENGTH, 0.0f, baseZ, 0.0f, 0.0f, 1.0f, 0.0f,
+      0.6f, 0.1f,
+      // Top-left
+      baseX, 0.0f, baseZ + Constants::Chunk::LENGTH, 0.0f, 0.0f, 1.0f, 0.0f,
+      0.6f, 0.1f,
 
-    // Second triangle
-    // Bottom-right
-    baseX + Constants::Chunk::LENGTH, 0.0f, baseZ, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-    // Top-right
-    baseX + Constants::Chunk::LENGTH, 0.0f, baseZ + Constants::Chunk::LENGTH, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-    // Top-left
-    baseX, 0.0f, baseZ + Constants::Chunk::LENGTH, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f
-  };
+      // Second triangle
+      // Bottom-right
+      baseX + Constants::Chunk::LENGTH, 0.0f, baseZ, 0.0f, 0.0f, 1.0f, 0.0f,
+      0.6f, 0.1f,
+      // Top-right
+      baseX + Constants::Chunk::LENGTH, 0.0f, baseZ + Constants::Chunk::LENGTH,
+      0.0f, 0.0f, 1.0f, 0.0f, 0.6f, 0.1f,
+      // Top-left
+      baseX, 0.0f, baseZ + Constants::Chunk::LENGTH, 0.0f, 0.0f, 1.0f, 0.0f,
+      0.6f, 0.1f};
 
   glGenVertexArrays(1, &m_VAO);
   glGenBuffers(1, &m_VBO);
