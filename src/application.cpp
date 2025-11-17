@@ -1,6 +1,8 @@
 #include "application.h"
 
 #include <glm/gtc/type_ptr.hpp>
+#include <print>
+#include <string>
 
 #include "shader.h"
 
@@ -61,12 +63,11 @@ void Application::update() {
   handleKeyPress(deltaTime);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  
   glm::mat4 view = m_Camera.getView();
   m_Shader.setUniformMat4("uView", glm::value_ptr(view));
   glm::mat4 projection = m_Camera.getProjection();
   m_Shader.setUniformMat4("uProjection", glm::value_ptr(projection));
-  // m_ChunkManager.render(m_Camera.getPosition());
+  m_ChunkManager.render(m_Camera.getPosition());
 
   glfwSwapBuffers(m_Window);
   glfwPollEvents();
@@ -74,7 +75,7 @@ void Application::update() {
   GLenum err = glGetError();
   if (err != GL_NO_ERROR) {
     std::string error = (const char*)glewGetErrorString(err);
-    throw std::runtime_error("OpenGL Error: " + error);
+    std::println("OpenGL Error ({}): {}", err, error);
   }
 }
 
