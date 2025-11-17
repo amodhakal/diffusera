@@ -7,6 +7,30 @@
 #include <OpenGL/gl.h>
 
 Chunk::Chunk(const ChunkPosition &position) {
+  float grassHeight = 2;
+  BlockType blocks[Constants::Chunk::LENGTH][Constants::Chunk::HEIGHT]
+                  [Constants::Chunk::LENGTH];
+
+  for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
+    for (uint blockY = 0; blockY < grassHeight; blockY++) {
+      for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
+        blocks[blockX][blockY][blockZ] = BlockType::GRASS;
+      }
+    }
+  }
+
+  for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
+    for (uint blockY = grassHeight; blockY < Constants::Chunk::HEIGHT;
+         blockY++) {
+      for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
+        blocks[blockX][blockY][blockZ] = BlockType::AIR;
+      }
+    }
+  }
+
+  // TODO Convert the blocks representation into a mesh, then the vbo data
+  // TODO Remove the faces hidden inside other blocks
+
   float baseX = position.xPosition * Constants::Chunk::LENGTH;
   float baseZ = position.zPosition * Constants::Chunk::LENGTH;
   m_VboData = {

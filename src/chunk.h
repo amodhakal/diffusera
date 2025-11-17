@@ -4,6 +4,8 @@
 
 #include <vector>
 
+#include "config.h"
+
 struct ChunkPosition {
   int xPosition;
   int zPosition;
@@ -21,6 +23,8 @@ struct std::hash<ChunkPosition> {
     return h1 ^ (h2 << 1);
   }
 };
+
+enum BlockType { AIR, GRASS };
 
 class Chunk {
  public:
