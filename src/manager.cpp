@@ -31,10 +31,6 @@ void ChunkManager::render(glm::vec3 position) {
 }
 
 void ChunkManager::update(glm::vec3 position) {
-  if (m_IsLatest) {
-    return;
-  }
-
   m_VboData.clear();
   int currentChunkX = position.x / Constants::Chunk::LENGTH;
   int currentChunkZ = position.z / Constants::Chunk::LENGTH;
@@ -51,6 +47,16 @@ void ChunkManager::update(glm::vec3 position) {
     if (chunkDistanceSquared >
         Constants::Chunk::RENDER_DISTANCE * Constants::Chunk::RENDER_DISTANCE) {
       m_Chunks.erase(position);
+      m_IsLatest = false;
+    }
+  }
+
+  for (int chunkX = currentChunkX - Constants::Chunk::RENDER_DISTANCE;
+       chunkX < currentChunkX + Constants::Chunk::RENDER_DISTANCE; chunkX++) {
+    for (int chunkZ = currentChunkZ - Constants::Chunk::RENDER_DISTANCE;
+         chunkZ < currentChunkZ + Constants::Chunk::RENDER_DISTANCE; chunkZ++) {
+      ChunkPosition position = {chunkX, chunkZ};
+      // TODO Add a chunk not available in the chunk map
     }
   }
 
@@ -64,6 +70,10 @@ void ChunkManager::update(glm::vec3 position) {
   // Chunk chunk1(0, 0);
   // auto chunkData = chunk1.getVboData();
   // m_VboData.insert(m_VboData.end(), chunkData.begin(), chunkData.end());
+
+  if (m_IsLatest) {
+    return;
+  }
 
   // TODO: Setup properly
   m_VboData = {
