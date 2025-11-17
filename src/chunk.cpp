@@ -1,10 +1,8 @@
 #include "chunk.h"
 
-#include "config.h"
+#include <glad/glad.h>
 
-#define GL_SILENCE_DEPRECATION
-#include <GL/glew.h>
-#include <OpenGL/gl.h>
+#include "config.h"
 
 Chunk::Chunk(const ChunkPosition &position) {
   float grassHeight = 2;

@@ -1,37 +1,26 @@
-
 cmake_minimum_required(VERSION 3.16)
-project(linterra VERSION 1.0 LANGUAGES CXX)
+project(linterra VERSION 1.0 LANGUAGES C CXX)
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(OpenGL REQUIRED)
-find_library(METAL_FRAMEWORK Metal REQUIRED)
-find_library(QUARTZCORE_FRAMEWORK QuartzCore REQUIRED)
-find_library(COCOA_FRAMEWORK Cocoa REQUIRED)
-
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
-find_package(glew REQUIRED)
 
-file(GLOB_RECURSE SOURCES "src/*.cpp")
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp" "vendor/glad/src/glad.c")
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ${OPENGL_INCLUDE_DIR}
-    ${GLFW_INCLUDE_DIR}
-    ${GLM_INCLUDE_DIR}
-    ${GLEW_INCLUDE_DIR}
     src
+    vendor/glad/include
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    ${OPENGL_LIBRARIES}
-    ${METAL_FRAMEWORK}
-    ${QUARTZCORE_FRAMEWORK}
-    ${COCOA_FRAMEWORK}
+    OpenGL::GL
     glfw
-    GLEW::GLEW
+    glm::glm
 )
 
 add_custom_command(

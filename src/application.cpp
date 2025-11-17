@@ -1,3 +1,6 @@
+#define GL_SILENCE_DEPRECATION
+#include <glad/glad.h>
+
 #include "application.h"
 
 #include <glm/gtc/type_ptr.hpp>
@@ -36,8 +39,8 @@ Application::Application(const char* title, const uint width, const uint height,
   glfwSetFramebufferSizeCallback(m_Window, handleResizeCallback);
   glfwSetWindowUserPointer(m_Window, this);
 
-  if (glewInit() != GLEW_OK) {
-    throw std::runtime_error("Failed to initialize GLEW");
+  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    throw std::runtime_error("Failed to initialize GLAD");
   }
 
   m_Shader.load(Constants::VERTEX_PATH, Constants::FRAGMENT_PATH);
@@ -74,8 +77,7 @@ void Application::update() {
 
   GLenum err = glGetError();
   if (err != GL_NO_ERROR) {
-    std::string error = (const char*)glewGetErrorString(err);
-    std::println("OpenGL Error ({}): {}", err, error);
+    std::println("OpenGL Error: {}", err);
   }
 }
 

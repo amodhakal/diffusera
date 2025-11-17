@@ -3,9 +3,7 @@
 #include "io.h"
 
 #define GL_SILENCE_DEPRECATION
-#include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <OpenGL/gl.h>
 
 #include <string>
 

@@ -1,14 +1,12 @@
 #include "manager.h"
 
+#include <glad/glad.h>
+
 #include <cmath>
+#include <glm/glm.hpp>
 
 #include "chunk.h"
 #include "config.h"
-
-#define GL_SILENCE_DEPRECATION
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <OpenGL/gl.h>
 
 ChunkManager::ChunkManager() {
 }
