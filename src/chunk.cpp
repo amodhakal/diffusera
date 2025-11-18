@@ -4,10 +4,170 @@
 
 #include "config.h"
 
+std::vector<float> getVboFromStore(const BlockStore &blocks,
+                                   const ChunkPosition &position) {
+  std::vector<float> vertices;
+
+  int chunkXToPosition = position.xPosition * Constants::Chunk::LENGTH;
+  int chunkZToPosition = position.zPosition * Constants::Chunk::LENGTH;
+
+  for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
+    for (uint blockY = 0; blockY < Constants::Chunk::HEIGHT; blockY++) {
+      for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
+        BlockType current = blocks[blockX][blockY][blockZ];
+
+        // Air has no mesh
+        if (current == BlockType::AIR) {
+          continue;
+        }
+
+        std::vector<float> currentData;
+        float x, y, z;
+
+        // Top
+        if (blockY + 1 == Constants::Chunk::HEIGHT ||
+            blocks[blockX][blockY + 1][blockZ] == BlockType::AIR) {
+          x = chunkXToPosition + blockX;
+          y = blockY + 1;
+          z = chunkZToPosition + blockZ;
+
+          currentData = {
+              // First triangle
+              x, y, z, 0.0f, 1.0f, 0.0f, 0.0f, 0.6f, 0.1f,      // bottom-left
+              x + 1, y, z, 0.0f, 1.0f, 0.0f, 0.0f, 0.6f, 0.1f,  // bottom-right
+              x, y, z + 1, 0.0f, 1.0f, 0.0f, 0.0f, 0.6f, 0.1f,  // top-left
+
+              // Second triangle
+              x + 1, y, z, 0.0f, 1.0f, 0.0f, 0.0f, 0.6f, 0.1f,  // bottom-right
+              x + 1, y, z + 1, 0.0f, 1.0f, 0.0f, 0.0f, 0.6f, 0.1f,  // top-right
+              x, y, z + 1, 0.0f, 1.0f, 0.0f, 0.0f, 0.6f, 0.1f       // top-left
+          };
+
+          vertices.insert_range(vertices.end(), currentData);
+        }
+
+        // Down
+        if (blockY == 0 ||
+            blocks[blockX][blockY - 1][blockZ] == BlockType::AIR) {
+          x = chunkXToPosition + blockX;
+          y = blockY;
+          z = chunkZToPosition + blockZ;
+
+          currentData = {
+              // First triangle
+              x, y, z, 0.0f, -1.0f, 0.0f, 0.0f, 0.6f, 0.1f,      // bottom-left
+              x + 1, y, z, 0.0f, -1.0f, 0.0f, 0.0f, 0.6f, 0.1f,  // bottom-right
+              x, y, z + 1, 0.0f, -1.0f, 0.0f, 0.0f, 0.6f, 0.1f,  // top-left
+
+              // Second triangle
+              x + 1, y, z, 0.0f, -1.0f, 0.0f, 0.0f, 0.6f, 0.1f,  // bottom-right
+              x + 1, y, z + 1, 0.0f, -1.0f, 0.0f, 0.0f, 0.6f,
+              0.1f,                                             // top-right
+              x, y, z + 1, 0.0f, -1.0f, 0.0f, 0.0f, 0.6f, 0.1f  // top-left
+          };
+
+          vertices.insert_range(vertices.end(), currentData);
+        }
+
+        // Front
+        if (blockZ + 1 == Constants::Chunk::LENGTH ||
+            blocks[blockX][blockY][blockZ + 1] == BlockType::AIR) {
+          x = chunkXToPosition + blockX;
+          y = blockY;
+          z = chunkZToPosition + blockZ + 1;
+
+          currentData = {
+              // First triangle
+              x, y, z, 0.0f, 0.0f, 1.0f, 0.0f, 0.6f, 0.1f,      // bottom-left
+              x + 1, y, z, 0.0f, 0.0f, 1.0f, 0.0f, 0.6f, 0.1f,  // bottom-right
+              x, y + 1, z, 0.0f, 0.0f, 1.0f, 0.0f, 0.6f, 0.1f,  // top-left
+
+              // Second triangle
+              x + 1, y, z, 0.0f, 0.0f, 1.0f, 0.0f, 0.6f, 0.1f,  // bottom-right
+              x + 1, y + 1, z, 0.0f, 0.0f, 1.0f, 0.0f, 0.6f, 0.1f,  // top-right
+              x, y + 1, z, 0.0f, 0.0f, 1.0f, 0.0f, 0.6f, 0.1f       // top-left
+          };
+
+          vertices.insert_range(vertices.end(), currentData);
+        }
+
+        // Back
+        if (blockZ == 0 ||
+            blocks[blockX][blockY][blockZ - 1] == BlockType::AIR) {
+          x = chunkXToPosition + blockX;
+          y = blockY;
+          z = chunkZToPosition + blockZ;
+
+          currentData = {
+              // First triangle
+              x, y, z, 0.0f, 0.0f, -1.0f, 0.0f, 0.6f, 0.1f,      // bottom-left
+              x + 1, y, z, 0.0f, 0.0f, -1.0f, 0.0f, 0.6f, 0.1f,  // bottom-right
+              x, y + 1, z, 0.0f, 0.0f, -1.0f, 0.0f, 0.6f, 0.1f,  // top-left
+
+              // Second triangle
+              x + 1, y, z, 0.0f, 0.0f, -1.0f, 0.0f, 0.6f, 0.1f,  // bottom-right
+              x + 1, y + 1, z, 0.0f, 0.0f, -1.0f, 0.0f, 0.6f,
+              0.1f,                                             // top-right
+              x, y + 1, z, 0.0f, 0.0f, -1.0f, 0.0f, 0.6f, 0.1f  // top-left
+          };
+
+          vertices.insert_range(vertices.end(), currentData);
+        }
+
+        // Left
+        if (blockX == 0 ||
+            blocks[blockX - 1][blockY][blockZ] == BlockType::AIR) {
+          x = chunkXToPosition + blockX;
+          y = blockY;
+          z = chunkZToPosition + blockZ;
+
+          currentData = {
+              // First triangle
+              x, y, z, -1.0f, 0.0f, 0.0f, 0.0f, 0.6f, 0.1f,      // bottom-left
+              x, y, z + 1, -1.0f, 0.0f, 0.0f, 0.0f, 0.6f, 0.1f,  // bottom-right
+              x, y + 1, z, -1.0f, 0.0f, 0.0f, 0.0f, 0.6f, 0.1f,  // top-left
+
+              // Second triangle
+              x, y, z + 1, -1.0f, 0.0f, 0.0f, 0.0f, 0.6f, 0.1f,  // bottom-right
+              x, y + 1, z + 1, -1.0f, 0.0f, 0.0f, 0.0f, 0.6f,
+              0.1f,                                             // top-right
+              x, y + 1, z, -1.0f, 0.0f, 0.0f, 0.0f, 0.6f, 0.1f  // top-left
+          };
+
+          vertices.insert_range(vertices.end(), currentData);
+        }
+
+        // Right
+        if (blockX + 1 == Constants::Chunk::LENGTH ||
+            blocks[blockX + 1][blockY][blockZ] == BlockType::AIR) {
+          x = chunkXToPosition + blockX + 1;
+          y = blockY;
+          z = chunkZToPosition + blockZ;
+
+          currentData = {
+              // First triangle
+              x, y, z, 1.0f, 0.0f, 0.0f, 0.0f, 0.6f, 0.1f,      // bottom-left
+              x, y, z + 1, 1.0f, 0.0f, 0.0f, 0.0f, 0.6f, 0.1f,  // bottom-right
+              x, y + 1, z, 1.0f, 0.0f, 0.0f, 0.0f, 0.6f, 0.1f,  // top-left
+
+              // Second triangle
+              x, y, z + 1, 1.0f, 0.0f, 0.0f, 0.0f, 0.6f, 0.1f,  // bottom-right
+              x, y + 1, z + 1, 1.0f, 0.0f, 0.0f, 0.0f, 0.6f, 0.1f,  // top-right
+              x, y + 1, z, 1.0f, 0.0f, 0.0f, 0.0f, 0.6f, 0.1f       // top-left
+          };
+
+          vertices.insert_range(vertices.end(), currentData);
+        }
+      }
+    }
+  }
+
+  return vertices;
+}
+
 Chunk::Chunk(const ChunkPosition &position) {
-  float grassHeight = 2;
-  BlockType blocks[Constants::Chunk::LENGTH][Constants::Chunk::HEIGHT]
-                  [Constants::Chunk::LENGTH];
+  float grassHeight = 10;
+  BlockStore blocks;
 
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockY = 0; blockY < grassHeight; blockY++) {
@@ -26,32 +186,9 @@ Chunk::Chunk(const ChunkPosition &position) {
     }
   }
 
-  // TODO Convert the blocks representation into a mesh, then the vbo data
-  // TODO Remove the faces hidden inside other blocks
-
   float baseX = position.xPosition * Constants::Chunk::LENGTH;
   float baseZ = position.zPosition * Constants::Chunk::LENGTH;
-  m_VboData = {
-      // First triangle
-      // Bottom-left
-      baseX, 0.0f, baseZ, 0.0f, 0.0f, 1.0f, 0.0f, 0.6f, 0.1f,
-      // Bottom-right
-      baseX + Constants::Chunk::LENGTH, 0.0f, baseZ, 0.0f, 0.0f, 1.0f, 0.0f,
-      0.6f, 0.1f,
-      // Top-left
-      baseX, 0.0f, baseZ + Constants::Chunk::LENGTH, 0.0f, 0.0f, 1.0f, 0.0f,
-      0.6f, 0.1f,
-
-      // Second triangle
-      // Bottom-right
-      baseX + Constants::Chunk::LENGTH, 0.0f, baseZ, 0.0f, 0.0f, 1.0f, 0.0f,
-      0.6f, 0.1f,
-      // Top-right
-      baseX + Constants::Chunk::LENGTH, 0.0f, baseZ + Constants::Chunk::LENGTH,
-      0.0f, 0.0f, 1.0f, 0.0f, 0.6f, 0.1f,
-      // Top-left
-      baseX, 0.0f, baseZ + Constants::Chunk::LENGTH, 0.0f, 0.0f, 1.0f, 0.0f,
-      0.6f, 0.1f};
+  m_VboData = getVboFromStore(blocks, position);
 
   glGenVertexArrays(1, &m_VAO);
   glGenBuffers(1, &m_VBO);

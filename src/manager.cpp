@@ -42,7 +42,9 @@ void ChunkManager::render(glm::vec3 cameraPosition) {
      creaitng a chunk based on the mesh and the blocks.
 
      You will need to know which positions you have asked for, so you don't ask
-     again for the same chunk */
+     again for the same chunk 
+     
+     TODO Heavily struggles to create a chunk in the -x/-z scale or the other way around*/
 
   int currentChunkX =
       static_cast<int>(std::floor(cameraPosition.x / Constants::Chunk::LENGTH));
