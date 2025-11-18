@@ -38,6 +38,8 @@ class Chunk {
  private:
   uint m_VAO;
   uint m_VBO;
-
   std::vector<float> m_VboData;
+
+  std::vector<float> getVboFromStore(const BlockStore& blocks,
+                                     const ChunkPosition& position);
 };
