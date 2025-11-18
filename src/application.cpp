@@ -93,7 +93,7 @@ float Application::getDeltaTime() {
   m_CombinedDeltaTime += deltaTime;
   m_FpsAttempts++;
 
-  constexpr uint MAX_ATTEMPTS = 1000;
+  constexpr uint MAX_ATTEMPTS = 100;
   if (m_FpsAttempts >= MAX_ATTEMPTS) {
     std::println("FPS: {}",
                  std::to_string(1 / (m_CombinedDeltaTime / MAX_ATTEMPTS)));

@@ -12,6 +12,8 @@ constexpr uint SCR_HEIGHT = 600;
 
 constexpr auto BG_COLOR = glm::vec4(0.1, 0.1, 0.1, 1.0);
 
+constexpr bool DO_TRIANGLE_LINE = true;
+
 namespace Camera {
 constexpr float SPEED = 7.5;
 constexpr float SENSITIVITY = 0.2;
@@ -35,7 +37,7 @@ constexpr glm::vec3 DEFAULT_UP = {0, 1, 0};
 namespace Chunk {
 constexpr int LENGTH = 16;
 constexpr int HEIGHT = 256;
-constexpr int RENDER_DISTANCE_CHUNKS = 3;
+constexpr int RENDER_DISTANCE_CHUNKS = 4;
 constexpr int RENDER_DISTANCE_BLOCKS = RENDER_DISTANCE_CHUNKS * LENGTH;
 }  // namespace Chunk
 

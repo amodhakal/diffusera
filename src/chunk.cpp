@@ -2,6 +2,8 @@
 
 #include <glad/glad.h>
 
+#include "config.h"
+
 Chunk::Chunk(const ChunkPosition &position) {
   float grassHeight = 10;
   BlockStore blocks;
@@ -45,7 +47,9 @@ Chunk::Chunk(const ChunkPosition &position) {
                         (void *)(6 * sizeof(float)));
   glEnableVertexAttribArray(2);
 
-  // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  if (Constants::DO_TRIANGLE_LINE) {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  }
 }
 
 void Chunk::render() {
