@@ -3,12 +3,23 @@
 #include <glad/glad.h>
 
 #include <cmath>
+#include <cstdlib>
+#include <ctime>
 #include <glm/glm.hpp>
 
 #include "chunk.h"
 #include "config.h"
 
 ChunkManager::ChunkManager() {
+  float seed = std::rand();
+
+  m_NoiseGenerator = FastNoiseLite(seed);
+  m_NoiseGenerator.SetNoiseType(Constants::Noise::NOISE_TYPE);
+  m_NoiseGenerator.SetFractalType(Constants::Noise::FRACTAL_TYPE);
+  m_NoiseGenerator.SetFractalOctaves(Constants::Noise::FRACTAL_OCTAVE);
+  m_NoiseGenerator.SetFractalGain(Constants::Noise::FRACTAL_GAIN);
+  m_NoiseGenerator.SetFractalLacunarity(Constants::Noise::FRACTAL_LACUNARITY);
+  m_NoiseGenerator.SetFrequency(Constants::Noise::FREQUENCY);
 }
 
 void ChunkManager::load(const Shader& shader) {
@@ -42,9 +53,10 @@ void ChunkManager::render(glm::vec3 cameraPosition) {
      creaitng a chunk based on the mesh and the blocks.
 
      You will need to know which positions you have asked for, so you don't ask
-     again for the same chunk 
-     
-     TODO Heavily struggles to create a chunk in the -x/-z scale or the other way around*/
+     again for the same chunk
+
+     TODO Heavily struggles to create a chunk in the -x/-z scale or the other
+     way around*/
 
   int currentChunkX =
       static_cast<int>(std::floor(cameraPosition.x / Constants::Chunk::LENGTH));
@@ -59,7 +71,7 @@ void ChunkManager::render(glm::vec3 cameraPosition) {
          chunkZ++) {
       ChunkPosition position = {chunkX, chunkZ};
       if (m_Chunks.find(position) == m_Chunks.end()) {
-        m_Chunks.emplace(position, Chunk(position));
+        m_Chunks.emplace(position, Chunk(position, m_NoiseGenerator));
       }
     }
   }

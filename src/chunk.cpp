@@ -7,20 +7,15 @@
 
 #include "config.h"
 
-Chunk::Chunk(const ChunkPosition &position) {
+Chunk::Chunk(const ChunkPosition &position,
+             const FastNoiseLite &noiseGenerator) {
   BlockStore blocks;
-  FastNoiseLite noise;
-  noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-  noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
-      float noiseY = noise.GetNoise(
-          static_cast<float>(position.xPosition *
-                                 Constants::Chunk::LENGTH +
+      float noiseY = noiseGenerator.GetNoise(
+          static_cast<float>(position.xPosition * Constants::Chunk::LENGTH +
                              blockX),
-          static_cast<float>(position.zPosition *
-                                 Constants::Chunk::LENGTH +
+          static_cast<float>(position.zPosition * Constants::Chunk::LENGTH +
                              blockZ));
       uint grassHeight =
           static_cast<uint>(std::floor(noiseY * Constants::Chunk::HEIGHT));

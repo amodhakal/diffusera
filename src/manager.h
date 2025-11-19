@@ -5,6 +5,7 @@
 
 #include "chunk.h"
 #include "shader.h"
+#include <noise/noise.h>
 
 class ChunkManager {
  public:
@@ -14,5 +15,7 @@ class ChunkManager {
 
  private:
   Shader m_Shader;
+  FastNoiseLite m_NoiseGenerator;
+
   std::unordered_map<ChunkPosition, Chunk> m_Chunks;
 };

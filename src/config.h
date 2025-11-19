@@ -3,6 +3,8 @@
 
 #include <glm/glm.hpp>
 
+#include "noise/noise.h"
+
 namespace Constants {
 constexpr auto VERTEX_PATH = "./shaders/shaders.vert";
 constexpr auto FRAGMENT_PATH = "./shaders/shaders.frag";
@@ -40,5 +42,15 @@ constexpr int HEIGHT = 256;
 constexpr int RENDER_DISTANCE_CHUNKS = 4;
 constexpr int RENDER_DISTANCE_BLOCKS = RENDER_DISTANCE_CHUNKS * LENGTH;
 }  // namespace Chunk
+
+namespace Noise {
+constexpr auto NOISE_TYPE = FastNoiseLite::NoiseType_Perlin;
+constexpr auto FRACTAL_TYPE = FastNoiseLite::FractalType_FBm;
+constexpr float FRACTAL_OCTAVE = 20.0;
+constexpr float FRACTAL_GAIN = 0.05;
+constexpr float FRACTAL_LACUNARITY = 2.0;
+constexpr float FREQUENCY = 0.01;
+
+}  // namespace Noise
 
 }  // namespace Constants

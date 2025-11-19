@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "config.h"
+#include "noise/noise.h"
 
 struct ChunkPosition {
   int xPosition;
@@ -32,14 +33,14 @@ typedef BlockType BlockStore[Constants::Chunk::LENGTH][Constants::Chunk::HEIGHT]
 class Chunk {
  public:
   Chunk() = default;
-  Chunk(const ChunkPosition& position);
+  Chunk(const ChunkPosition& position, const FastNoiseLite& noiseGenerator);
   void render();
 
  private:
   uint m_VAO;
   uint m_VBO;
-  std::vector<float> m_VboData;
 
+  std::vector<float> m_VboData;
   std::vector<float> getVboFromStore(const BlockStore& blocks,
                                      const ChunkPosition& position);
 };
