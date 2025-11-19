@@ -2,4 +2,4 @@
 
 - **Basic chunk creation & deletion:** 3.20 fps
 - **Includes not rendering faces inside blocks (inside a chunk only):** 24.75 fps
-- **With basic noise FBM setup**: 17.52 fps
+- **With basic noise FBM setup**: 6.0 fps

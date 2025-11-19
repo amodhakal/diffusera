@@ -1,8 +1,10 @@
 #include "chunk.h"
 
+#include <__ostream/print.h>
 #include <glad/glad.h>
 #include <noise/noise.h>
 
+#include <cassert>
 #include <cmath>
 
 #include "config.h"
@@ -12,13 +14,21 @@ Chunk::Chunk(const ChunkPosition &position,
   BlockStore blocks;
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
-      float noiseY = noiseGenerator.GetNoise(
-          static_cast<float>(position.xPosition * Constants::Chunk::LENGTH +
-                             blockX),
-          static_cast<float>(position.zPosition * Constants::Chunk::LENGTH +
-                             blockZ));
-      uint grassHeight =
-          static_cast<uint>(std::floor(noiseY * Constants::Chunk::HEIGHT));
+      float noiseX = position.xPosition * Constants::Chunk::LENGTH;
+      noiseX += blockX;
+      float noiseZ = position.zPosition * Constants::Chunk::LENGTH;
+      noiseZ += blockZ;
+
+      // (-1, 1) -> (0, 1)
+      float noiseY = noiseGenerator.GetNoise(noiseX, noiseZ);
+      noiseY /= 2.0;
+      noiseY += 0.5;
+
+      assert(!isnan(noiseY));
+      assert(noiseY >= 0.0);
+
+      uint grassHeight = static_cast<uint>(
+          std::floor(noiseY * Constants::Chunk::MAX_BLOCK_HEIGHT));
 
       for (int blockY = 0; blockY < grassHeight; blockY++) {
         blocks[blockX][blockY][blockZ] = BlockType::GRASS;

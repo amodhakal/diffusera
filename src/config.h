@@ -31,7 +31,7 @@ constexpr float PITCH_MIN = -89.0;
 constexpr float FOV_MIN = 1.0;
 constexpr float FOV_MAX = 45.0;
 
-constexpr glm::vec3 DEFAULT_POSITION = {-5, 20, 5};
+constexpr glm::vec3 DEFAULT_POSITION = {5, 90, 5};
 constexpr glm::vec3 DEFAULT_FRONT = {0, 0, -1};
 constexpr glm::vec3 DEFAULT_UP = {0, 1, 0};
 }  // namespace Camera
@@ -41,14 +41,15 @@ constexpr int LENGTH = 16;
 constexpr int HEIGHT = 256;
 constexpr int RENDER_DISTANCE_CHUNKS = 4;
 constexpr int RENDER_DISTANCE_BLOCKS = RENDER_DISTANCE_CHUNKS * LENGTH;
+constexpr int MAX_BLOCK_HEIGHT = HEIGHT / 2.0;
 }  // namespace Chunk
 
 namespace Noise {
 constexpr auto NOISE_TYPE = FastNoiseLite::NoiseType_Perlin;
 constexpr auto FRACTAL_TYPE = FastNoiseLite::FractalType_FBm;
-constexpr float FRACTAL_OCTAVE = 20.0;
-constexpr float FRACTAL_GAIN = 0.05;
-constexpr float FRACTAL_LACUNARITY = 2.0;
+constexpr float FRACTAL_OCTAVE = 5.0;
+constexpr float FRACTAL_GAIN = 0.5;
+constexpr float FRACTAL_LACUNARITY = 1.0;
 constexpr float FREQUENCY = 0.01;
 
 }  // namespace Noise
