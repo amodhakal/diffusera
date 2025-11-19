@@ -4,8 +4,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-class Camera {
- public:
+struct Camera {
+  glm::vec3 m_Position, m_Front, m_Up, m_WorldUp;
+  float m_Near, m_Far;
+
+  float m_Aspect, m_Fov;
+  float m_Yaw, m_Pitch;
+  float m_LastX, m_LastY;
+  bool m_IsFirstMouse;
+
   Camera(glm::vec3 position);
   void processMouseInput(double xPosition, double yPosition);
   void processScrollInput(double xOffset, double yOffset);
@@ -13,17 +20,5 @@ class Camera {
 
   glm::mat4 getView();
   glm::mat4 getProjection();
-  const glm::vec3 getPosition() const;
-  const glm::vec3 getFront() const;
-  const glm::vec3 getUp() const;
-  const glm::vec3 getRight() const;
-
-  const float getAspect() const;
-
- private:
-  glm::vec3 m_Position, m_Front, m_Up, m_WorldUp;
-  float m_Aspect, m_Fov;
-  float m_Yaw, m_Pitch;
-  float m_LastX, m_LastY;
-  bool m_IsFirstMouse;
+  glm::vec3 getRight() const;
 };

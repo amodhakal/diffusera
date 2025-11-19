@@ -10,6 +10,9 @@ Camera::Camera(glm::vec3 position) {
   m_Up = Constants::Camera::DEFAULT_UP;
   m_WorldUp = m_Up;
 
+  m_Near = Constants::Camera::NEAR;
+  m_Far = Constants::Camera::FAR;
+
   m_Fov = Constants::Camera::DEFAULT_FOV;
   m_Aspect = (float)Constants::SCR_WIDTH / (float)Constants::SCR_HEIGHT;
 
@@ -83,22 +86,6 @@ glm::mat4 Camera::getProjection() {
                           Constants::Camera::NEAR, Constants::Camera::FAR);
 }
 
-const glm::vec3 Camera::getPosition() const {
-  return m_Position;
-}
-
-const glm::vec3 Camera::getFront() const {
-  return m_Front;
-}
-
-const glm::vec3 Camera::getUp() const {
-  return m_Up;
-}
-
-const float Camera::getAspect() const {
-  return m_Aspect;
-}
-
-const glm::vec3 Camera::getRight() const {
+glm::vec3 Camera::getRight() const {
   return glm::normalize(glm::cross(m_Up, m_WorldUp));
 }

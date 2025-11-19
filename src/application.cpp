@@ -70,7 +70,7 @@ void Application::update() {
   m_Shader.setUniformMat4("uView", glm::value_ptr(view));
   glm::mat4 projection = m_Camera.getProjection();
   m_Shader.setUniformMat4("uProjection", glm::value_ptr(projection));
-  m_ChunkManager.render(m_Camera.getPosition());
+  m_ChunkManager.render(m_Camera);
 
   glfwSwapBuffers(m_Window);
   glfwPollEvents();

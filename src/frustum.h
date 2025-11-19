@@ -27,23 +27,23 @@ Frustum::Frustum(const Camera& camera, float aspect, float fovY, float zNear,
                  float zFar) {
   float halfVSide = zFar * tanf(fovY * 0.5);
   float halfHSide = halfVSide * aspect;
-  const glm::vec3 frontMultFar = zFar * camera.getFront();
+  const glm::vec3 frontMultFar = zFar * camera.m_Front;
 
-  nearFace = {camera.getPosition() + zNear * camera.getFront(),
-              camera.getFront()};
-  farFace = {camera.getPosition() + frontMultFar, -camera.getFront()};
+  nearFace = {camera.m_Position + zNear * camera.m_Front,
+              camera.m_Front};
+  farFace = {camera.m_Position + frontMultFar, -camera.m_Front};
   rightFace = {
-      camera.getPosition(),
-      glm::cross(frontMultFar - camera.getRight() * halfHSide, camera.getUp())};
+      camera.m_Position,
+      glm::cross(frontMultFar - camera.getRight() * halfHSide, camera.m_Up)};
   leftFace = {
-      camera.getPosition(),
-      glm::cross(camera.getUp(), frontMultFar + camera.getRight() * halfHSide)};
+      camera.m_Position,
+      glm::cross(camera.m_Up, frontMultFar + camera.getRight() * halfHSide)};
   topFace = {
-      camera.getPosition(),
-      glm::cross(camera.getRight(), frontMultFar - camera.getUp() * halfVSide)};
+      camera.m_Position,
+      glm::cross(camera.getRight(), frontMultFar - camera.m_Up * halfVSide)};
   bottomFace = {
-      camera.getPosition(),
-      glm::cross(frontMultFar + camera.getUp() * halfVSide, camera.getRight())};
+      camera.m_Position,
+      glm::cross(frontMultFar + camera.m_Up * halfVSide, camera.getRight())};
 }
 
 bool Frustum::isChunkInside(const ChunkPosition& position) {

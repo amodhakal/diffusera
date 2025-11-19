@@ -1,13 +1,14 @@
+#define GL_SILENCE_DEPRECATION
+
 #include "manager.h"
+#include "chunk.h"
+#include "config.h"
+#include "frustum.h"
 
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <glm/glm.hpp>
-
-#include "chunk.h"
-#include "config.h"
-#include "frustum.h"
 
 ChunkManager::ChunkManager() {
   float seed = std::rand();
@@ -26,7 +27,7 @@ void ChunkManager::load(const Shader& shader) {
 }
 
 void ChunkManager::render(const Camera& camera) {
-  glm::vec3 cameraPosition = camera.getPosition();
+  glm::vec3 cameraPosition = camera.m_Position;
 
   for (auto it = m_Chunks.begin(); it != m_Chunks.end();) {
     const ChunkPosition& position = it->first;
@@ -58,6 +59,19 @@ void ChunkManager::render(const Camera& camera) {
          chunkZ <= currentChunkZ + Constants::Chunk::RENDER_DISTANCE_CHUNKS;
          chunkZ++) {
       ChunkPosition position = {chunkX, chunkZ};
+      float xDisplacement =
+          (position.xPosition * Constants::Chunk::LENGTH) - cameraPosition.x;
+      float zDisplacement =
+          (position.zPosition * Constants::Chunk::LENGTH) - cameraPosition.z;
+
+      float distanceSquared =
+          (xDisplacement * xDisplacement) + (zDisplacement * zDisplacement);
+      if (distanceSquared > Constants::Chunk::RENDER_DISTANCE_BLOCKS *
+                                Constants::Chunk::RENDER_DISTANCE_BLOCKS) {
+        // Chunk outside of the radius
+        continue;
+      }
+
       if (m_Chunks.find(position) == m_Chunks.end()) {
         m_Chunks.emplace(position, Chunk(position, m_NoiseGenerator));
       }
@@ -65,13 +79,13 @@ void ChunkManager::render(const Camera& camera) {
   }
 
   glUseProgram(m_Shader.getId());
-  Frustum frustum(camera, camera.getAspect(), Constants::Camera::DEFAULT_FOV,
+  Frustum frustum(camera, camera.m_Aspect, camera.m_Fov,
                   Constants::Camera::NEAR, Constants::Camera::FAR);
 
   for (auto& value : m_Chunks) {
     const ChunkPosition& position = value.first;
     if (!frustum.isChunkInside(position)) {
-      // continue;
+      continue;
     }
 
     Chunk& chunk = value.second;
