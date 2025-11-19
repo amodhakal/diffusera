@@ -15,6 +15,7 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE
     src
     vendor/glad/include
+    vendor/noise/include
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

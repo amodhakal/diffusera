@@ -1,25 +1,36 @@
 #include "chunk.h"
 
 #include <glad/glad.h>
+#include <noise/noise.h>
+
+#include <cmath>
 
 #include "config.h"
 
 Chunk::Chunk(const ChunkPosition &position) {
-  float grassHeight = 10;
   BlockStore blocks;
+  FastNoiseLite noise;
+  noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+  noise.SetFractalType(FastNoiseLite::FractalType_FBm);
 
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
-    for (uint blockY = 0; blockY < grassHeight; blockY++) {
-      for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
+    for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
+      float noiseY = noise.GetNoise(
+          static_cast<float>(position.xPosition *
+                                 Constants::Chunk::LENGTH +
+                             blockX),
+          static_cast<float>(position.zPosition *
+                                 Constants::Chunk::LENGTH +
+                             blockZ));
+      uint grassHeight =
+          static_cast<uint>(std::floor(noiseY * Constants::Chunk::HEIGHT));
+
+      for (int blockY = 0; blockY < grassHeight; blockY++) {
         blocks[blockX][blockY][blockZ] = BlockType::GRASS;
       }
-    }
-  }
 
-  for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
-    for (uint blockY = grassHeight; blockY < Constants::Chunk::HEIGHT;
-         blockY++) {
-      for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
+      for (int blockY = grassHeight; blockY < Constants::Chunk::HEIGHT;
+           blockY++) {
         blocks[blockX][blockY][blockZ] = BlockType::AIR;
       }
     }
