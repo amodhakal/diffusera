@@ -1,17 +1,18 @@
 #pragma once
+#include <noise/noise.h>
 #include <sys/types.h>
 
 #include <unordered_map>
 
+#include "camera.h"
 #include "chunk.h"
 #include "shader.h"
-#include <noise/noise.h>
 
 class ChunkManager {
  public:
   ChunkManager();
-  void load(const Shader &shader);
-  void render(glm::vec3 cameraPosition);
+  void load(const Shader& shader);
+  void render(const Camera& cmaera);
 
  private:
   Shader m_Shader;

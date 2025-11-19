@@ -8,8 +8,11 @@ Camera::Camera(glm::vec3 position) {
   m_Position = position;
   m_Front = Constants::Camera::DEFAULT_FRONT;
   m_Up = Constants::Camera::DEFAULT_UP;
+  m_WorldUp = m_Up;
 
   m_Fov = Constants::Camera::DEFAULT_FOV;
+  m_Aspect = (float)Constants::SCR_WIDTH / (float)Constants::SCR_HEIGHT;
+
   m_Yaw = Constants::Camera::DEFAULT_YAW;
   m_Pitch = Constants::Camera::DEAULT_PITCH;
 
@@ -76,11 +79,26 @@ glm::mat4 Camera::getView() {
 }
 
 glm::mat4 Camera::getProjection() {
-  float aspect = (float)Constants::SCR_WIDTH / (float)Constants::SCR_HEIGHT;
-  return glm::perspective(glm::radians(m_Fov), aspect, Constants::Camera::NEAR,
-                          Constants::Camera::FAR);
+  return glm::perspective(glm::radians(m_Fov), m_Aspect,
+                          Constants::Camera::NEAR, Constants::Camera::FAR);
 }
 
-const glm::vec3 Camera::getPosition() {
-  return this->m_Position;
+const glm::vec3 Camera::getPosition() const {
+  return m_Position;
+}
+
+const glm::vec3 Camera::getFront() const {
+  return m_Front;
+}
+
+const glm::vec3 Camera::getUp() const {
+  return m_Up;
+}
+
+const float Camera::getAspect() const {
+  return m_Aspect;
+}
+
+const glm::vec3 Camera::getRight() const {
+  return glm::normalize(glm::cross(m_Up, m_WorldUp));
 }

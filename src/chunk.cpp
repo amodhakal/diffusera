@@ -69,6 +69,7 @@ Chunk::Chunk(const ChunkPosition &position,
 }
 
 void Chunk::render() {
+
   glBindVertexArray(m_VAO);
   glDrawArrays(GL_TRIANGLES, 0, m_VboData.size() / 9);
 }

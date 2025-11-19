@@ -1,7 +1,5 @@
 #include "manager.h"
 
-#include <glad/glad.h>
-
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
@@ -9,6 +7,7 @@
 
 #include "chunk.h"
 #include "config.h"
+#include "frustum.h"
 
 ChunkManager::ChunkManager() {
   float seed = std::rand();
@@ -26,7 +25,9 @@ void ChunkManager::load(const Shader& shader) {
   m_Shader = shader;
 }
 
-void ChunkManager::render(glm::vec3 cameraPosition) {
+void ChunkManager::render(const Camera& camera) {
+  glm::vec3 cameraPosition = camera.getPosition();
+
   for (auto it = m_Chunks.begin(); it != m_Chunks.end();) {
     const ChunkPosition& position = it->first;
     float xDisplacement =
@@ -44,19 +45,6 @@ void ChunkManager::render(glm::vec3 cameraPosition) {
 
     ++it;
   }
-
-  /* TODO Instead of creating a chunk as such. Have another thread to generate
-     the block info and the cleaned up mesh, which is then sent to a complete
-     queue.
-
-     The render() function checks for any items in the completed queue, as
-     creaitng a chunk based on the mesh and the blocks.
-
-     You will need to know which positions you have asked for, so you don't ask
-     again for the same chunk
-
-     TODO Heavily struggles to create a chunk in the -x/-z scale or the other
-     way around*/
 
   int currentChunkX =
       static_cast<int>(std::floor(cameraPosition.x / Constants::Chunk::LENGTH));
@@ -77,7 +65,15 @@ void ChunkManager::render(glm::vec3 cameraPosition) {
   }
 
   glUseProgram(m_Shader.getId());
+  Frustum frustum(camera, camera.getAspect(), Constants::Camera::DEFAULT_FOV,
+                  Constants::Camera::NEAR, Constants::Camera::FAR);
+
   for (auto& value : m_Chunks) {
+    const ChunkPosition& position = value.first;
+    if (!frustum.isChunkInside(position)) {
+      // continue;
+    }
+
     Chunk& chunk = value.second;
     chunk.render();
   }
