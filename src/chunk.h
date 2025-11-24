@@ -25,7 +25,7 @@ struct std::hash<ChunkPosition> {
   }
 };
 
-enum BlockType { AIR, GRASS };
+enum BlockType { AIR, GRASS, DIRT };
 
 typedef BlockType BlockStore[Constants::Chunk::LENGTH][Constants::Chunk::HEIGHT]
                             [Constants::Chunk::LENGTH];

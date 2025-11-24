@@ -6,6 +6,8 @@
 
 #include <cassert>
 #include <cmath>
+#include <stdexcept>
+#include <string>
 
 #include "config.h"
 
@@ -31,10 +33,12 @@ Chunk::Chunk(const ChunkPosition &position,
           std::floor(noiseY * Constants::Chunk::MAX_BLOCK_HEIGHT));
 
       for (int blockY = 0; blockY < grassHeight; blockY++) {
-        blocks[blockX][blockY][blockZ] = BlockType::GRASS;
+        blocks[blockX][blockY][blockZ] = BlockType::DIRT;
       }
 
-      for (int blockY = grassHeight; blockY < Constants::Chunk::HEIGHT;
+      blocks[blockX][grassHeight][blockZ] = BlockType::GRASS;
+
+      for (int blockY = grassHeight + 1; blockY < Constants::Chunk::HEIGHT;
            blockY++) {
         blocks[blockX][blockY][blockZ] = BlockType::AIR;
       }
@@ -69,7 +73,6 @@ Chunk::Chunk(const ChunkPosition &position,
 }
 
 void Chunk::render() {
-
   glBindVertexArray(m_VAO);
   glDrawArrays(GL_TRIANGLES, 0, m_VboData.size() / 9);
 }
@@ -85,6 +88,21 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
     for (uint blockY = 0; blockY < Constants::Chunk::HEIGHT; blockY++) {
       for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
         BlockType current = blocks[blockX][blockY][blockZ];
+        glm::vec3 color;
+
+        switch (current) {
+          case BlockType::AIR:
+            continue;
+          case BlockType::GRASS:
+            color = {0.0, 0.6, 0.1};
+            break;
+          case BlockType::DIRT:
+            color = {0.6, 0.2, 0.2};
+            break;
+          default:
+            throw std::runtime_error("Invalid type received: " +
+                                     std::to_string(current));
+        }
 
         // Air has no mesh
         if (current == BlockType::AIR) {
@@ -101,16 +119,24 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
           y = blockY + 1;
           z = chunkZToPosition + blockZ;
 
+          glm::vec3 color;
+
           currentData = {
               // First triangle
-              x, y, z, 0.0, 1.0, 0.0, 0.0, 0.6, 0.1,      // bottom-left
-              x + 1, y, z, 0.0, 1.0, 0.0, 0.0, 0.6, 0.1,  // bottom-right
-              x, y, z + 1, 0.0, 1.0, 0.0, 0.0, 0.6, 0.1,  // top-left
+              x, y, z, 0.0, 1.0, 0.0, color[0], color[1],
+              color[2],  // bottom-left
+              x + 1, y, z, 0.0, 1.0, 0.0, color[0], color[1],
+              color[2],  // bottom-right
+              x, y, z + 1, 0.0, 1.0, 0.0, color[0], color[1],
+              color[2],  // top-left
 
               // Second triangle
-              x + 1, y, z, 0.0, 1.0, 0.0, 0.0, 0.6, 0.1,      // bottom-right
-              x + 1, y, z + 1, 0.0, 1.0, 0.0, 0.0, 0.6, 0.1,  // top-right
-              x, y, z + 1, 0.0, 1.0, 0.0, 0.0, 0.6, 0.1       // top-left
+              x + 1, y, z, 0.0, 1.0, 0.0, color[0], color[1],
+              color[2],  // bottom-right
+              x + 1, y, z + 1, 0.0, 1.0, 0.0, color[0], color[1],
+              color[2],  // top-right
+              x, y, z + 1, 0.0, 1.0, 0.0, color[0], color[1],
+              color[2]  // top-left
           };
 
           vertices.insert_range(vertices.end(), currentData);
@@ -125,15 +151,20 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
 
           currentData = {
               // First triangle
-              x, y, z, 0.0, -1.0, 0.0, 0.0, 0.6, 0.1,      // bottom-left
-              x + 1, y, z, 0.0, -1.0, 0.0, 0.0, 0.6, 0.1,  // bottom-right
-              x, y, z + 1, 0.0, -1.0, 0.0, 0.0, 0.6, 0.1,  // top-left
+              x, y, z, 0.0, -1.0, 0.0, color[0], color[1],
+              color[2],  // bottom-left
+              x + 1, y, z, 0.0, -1.0, 0.0, color[0], color[1],
+              color[2],  // bottom-right
+              x, y, z + 1, 0.0, -1.0, 0.0, color[0], color[1],
+              color[2],  // top-left
 
               // Second triangle
-              x + 1, y, z, 0.0, -1.0, 0.0, 0.0, 0.6, 0.1,  // bottom-right
-              x + 1, y, z + 1, 0.0, -1.0, 0.0, 0.0, 0.6,
-              0.1,                                        // top-right
-              x, y, z + 1, 0.0, -1.0, 0.0, 0.0, 0.6, 0.1  // top-left
+              x + 1, y, z, 0.0, -1.0, 0.0, color[0], color[1],
+              color[2],  // bottom-right
+              x + 1, y, z + 1, 0.0, -1.0, 0.0, color[0], color[1],
+              color[2],  // top-right
+              x, y, z + 1, 0.0, -1.0, 0.0, color[0], color[1],
+              color[2]  // top-left
           };
 
           vertices.insert_range(vertices.end(), currentData);
@@ -148,14 +179,20 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
 
           currentData = {
               // First triangle
-              x, y, z, 0.0, 0.0, 1.0, 0.0, 0.6, 0.1,      // bottom-left
-              x + 1, y, z, 0.0, 0.0, 1.0, 0.0, 0.6, 0.1,  // bottom-right
-              x, y + 1, z, 0.0, 0.0, 1.0, 0.0, 0.6, 0.1,  // top-left
+              x, y, z, 0.0, 0.0, 1.0, color[0], color[1],
+              color[2],  // bottom-left
+              x + 1, y, z, 0.0, 0.0, 1.0, color[0], color[1],
+              color[2],  // bottom-right
+              x, y + 1, z, 0.0, 0.0, 1.0, color[0], color[1],
+              color[2],  // top-left
 
               // Second triangle
-              x + 1, y, z, 0.0, 0.0, 1.0, 0.0, 0.6, 0.1,      // bottom-right
-              x + 1, y + 1, z, 0.0, 0.0, 1.0, 0.0, 0.6, 0.1,  // top-right
-              x, y + 1, z, 0.0, 0.0, 1.0, 0.0, 0.6, 0.1       // top-left
+              x + 1, y, z, 0.0, 0.0, 1.0, color[0], color[1],
+              color[2],  // bottom-right
+              x + 1, y + 1, z, 0.0, 0.0, 1.0, color[0], color[1],
+              color[2],  // top-right
+              x, y + 1, z, 0.0, 0.0, 1.0, color[0], color[1],
+              color[2]  // top-left
           };
 
           vertices.insert_range(vertices.end(), currentData);
@@ -170,15 +207,20 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
 
           currentData = {
               // First triangle
-              x, y, z, 0.0, 0.0, -1.0, 0.0, 0.6, 0.1,      // bottom-left
-              x + 1, y, z, 0.0, 0.0, -1.0, 0.0, 0.6, 0.1,  // bottom-right
-              x, y + 1, z, 0.0, 0.0, -1.0, 0.0, 0.6, 0.1,  // top-left
+              x, y, z, 0.0, 0.0, -1.0, color[0], color[1],
+              color[2],  // bottom-left
+              x + 1, y, z, 0.0, 0.0, -1.0, color[0], color[1],
+              color[2],  // bottom-right
+              x, y + 1, z, 0.0, 0.0, -1.0, color[0], color[1],
+              color[2],  // top-left
 
               // Second triangle
-              x + 1, y, z, 0.0, 0.0, -1.0, 0.0, 0.6, 0.1,  // bottom-right
-              x + 1, y + 1, z, 0.0, 0.0, -1.0, 0.0, 0.6,
-              0.1,                                        // top-right
-              x, y + 1, z, 0.0, 0.0, -1.0, 0.0, 0.6, 0.1  // top-left
+              x + 1, y, z, 0.0, 0.0, -1.0, color[0], color[1],
+              color[2],  // bottom-right
+              x + 1, y + 1, z, 0.0, 0.0, -1.0, color[0], color[1],
+              color[2],  // top-right
+              x, y + 1, z, 0.0, 0.0, -1.0, color[0], color[1],
+              color[2]  // top-left
           };
 
           vertices.insert_range(vertices.end(), currentData);
@@ -193,15 +235,20 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
 
           currentData = {
               // First triangle
-              x, y, z, -1.0, 0.0, 0.0, 0.0, 0.6, 0.1,      // bottom-left
-              x, y, z + 1, -1.0, 0.0, 0.0, 0.0, 0.6, 0.1,  // bottom-right
-              x, y + 1, z, -1.0, 0.0, 0.0, 0.0, 0.6, 0.1,  // top-left
+              x, y, z, -1.0, 0.0, 0.0, color[0], color[1],
+              color[2],  // bottom-left
+              x, y, z + 1, -1.0, 0.0, 0.0, color[0], color[1],
+              color[2],  // bottom-right
+              x, y + 1, z, -1.0, 0.0, 0.0, color[0], color[1],
+              color[2],  // top-left
 
               // Second triangle
-              x, y, z + 1, -1.0, 0.0, 0.0, 0.0, 0.6, 0.1,  // bottom-right
-              x, y + 1, z + 1, -1.0, 0.0, 0.0, 0.0, 0.6,
-              0.1,                                        // top-right
-              x, y + 1, z, -1.0, 0.0, 0.0, 0.0, 0.6, 0.1  // top-left
+              x, y, z + 1, -1.0, 0.0, 0.0, color[0], color[1],
+              color[2],  // bottom-right
+              x, y + 1, z + 1, -1.0, 0.0, 0.0, color[0], color[1],
+              color[2],  // top-right
+              x, y + 1, z, -1.0, 0.0, 0.0, color[0], color[1],
+              color[2]  // top-left
           };
 
           vertices.insert_range(vertices.end(), currentData);
@@ -216,14 +263,20 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
 
           currentData = {
               // First triangle
-              x, y, z, 1.0, 0.0, 0.0, 0.0, 0.6, 0.1,      // bottom-left
-              x, y, z + 1, 1.0, 0.0, 0.0, 0.0, 0.6, 0.1,  // bottom-right
-              x, y + 1, z, 1.0, 0.0, 0.0, 0.0, 0.6, 0.1,  // top-left
+              x, y, z, 1.0, 0.0, 0.0, color[0], color[1],
+              color[2],  // bottom-left
+              x, y, z + 1, 1.0, 0.0, 0.0, color[0], color[1],
+              color[2],  // bottom-right
+              x, y + 1, z, 1.0, 0.0, 0.0, color[0], color[1],
+              color[2],  // top-left
 
               // Second triangle
-              x, y, z + 1, 1.0, 0.0, 0.0, 0.0, 0.6, 0.1,      // bottom-right
-              x, y + 1, z + 1, 1.0, 0.0, 0.0, 0.0, 0.6, 0.1,  // top-right
-              x, y + 1, z, 1.0, 0.0, 0.0, 0.0, 0.6, 0.1f      // top-left
+              x, y, z + 1, 1.0, 0.0, 0.0, color[0], color[1],
+              color[2],  // bottom-right
+              x, y + 1, z + 1, 1.0, 0.0, 0.0, color[0], color[1],
+              color[2],  // top-right
+              x, y + 1, z, 1.0, 0.0, 0.0, color[0], color[1],
+              color[2]  // top-left
           };
 
           vertices.insert_range(vertices.end(), currentData);
