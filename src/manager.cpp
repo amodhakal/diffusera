@@ -1,14 +1,15 @@
 #define GL_SILENCE_DEPRECATION
 
 #include "manager.h"
-#include "chunk.h"
-#include "config.h"
-#include "frustum.h"
 
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <glm/glm.hpp>
+
+#include "chunk.h"
+#include "config.h"
+#include "frustum.h"
 
 ChunkManager::ChunkManager() {
   float seed = std::rand();
@@ -31,10 +32,13 @@ void ChunkManager::render(const Camera& camera) {
 
   for (auto it = m_Chunks.begin(); it != m_Chunks.end();) {
     const ChunkPosition& position = it->first;
-    float xDisplacement =
-        (position.xPosition * Constants::Chunk::LENGTH) - cameraPosition.x;
-    float zDisplacement =
-        (position.zPosition * Constants::Chunk::LENGTH) - cameraPosition.z;
+    float chunkCenterX = position.xPosition * Constants::Chunk::LENGTH -
+                         (Constants::Chunk::LENGTH / 2.0f);
+    float chunkCenterZ = position.zPosition * Constants::Chunk::LENGTH -
+                         (Constants::Chunk::LENGTH / 2.0f);
+
+    float xDisplacement = chunkCenterX - cameraPosition.x;
+    float zDisplacement = chunkCenterZ - cameraPosition.z;
 
     float distanceSquared =
         (xDisplacement * xDisplacement) + (zDisplacement * zDisplacement);
@@ -47,10 +51,12 @@ void ChunkManager::render(const Camera& camera) {
     ++it;
   }
 
-  int currentChunkX =
-      static_cast<int>(std::floor(cameraPosition.x / Constants::Chunk::LENGTH));
-  int currentChunkZ =
-      static_cast<int>(std::floor(cameraPosition.z / Constants::Chunk::LENGTH));
+  int currentChunkX = static_cast<int>(
+      std::floor((cameraPosition.x + (Constants::Chunk::LENGTH / 2.0f)) /
+                 Constants::Chunk::LENGTH));
+  int currentChunkZ = static_cast<int>(
+      std::floor((cameraPosition.z + (Constants::Chunk::LENGTH / 2.0f)) /
+                 Constants::Chunk::LENGTH));
 
   for (int chunkX = currentChunkX - Constants::Chunk::RENDER_DISTANCE_CHUNKS;
        chunkX <= currentChunkX + Constants::Chunk::RENDER_DISTANCE_CHUNKS;
@@ -59,10 +65,13 @@ void ChunkManager::render(const Camera& camera) {
          chunkZ <= currentChunkZ + Constants::Chunk::RENDER_DISTANCE_CHUNKS;
          chunkZ++) {
       ChunkPosition position = {chunkX, chunkZ};
-      float xDisplacement =
-          (position.xPosition * Constants::Chunk::LENGTH) - cameraPosition.x;
-      float zDisplacement =
-          (position.zPosition * Constants::Chunk::LENGTH) - cameraPosition.z;
+      float chunkCenterX = position.xPosition * Constants::Chunk::LENGTH -
+                           (Constants::Chunk::LENGTH / 2.0f);
+      float chunkCenterZ = position.zPosition * Constants::Chunk::LENGTH -
+                           (Constants::Chunk::LENGTH / 2.0f);
+
+      float xDisplacement = chunkCenterX - cameraPosition.x;
+      float zDisplacement = chunkCenterZ - cameraPosition.z;
 
       float distanceSquared =
           (xDisplacement * xDisplacement) + (zDisplacement * zDisplacement);

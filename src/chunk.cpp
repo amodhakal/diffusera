@@ -1,6 +1,5 @@
 #include "chunk.h"
 
-#include <__ostream/print.h>
 #include <glad/glad.h>
 #include <noise/noise.h>
 
@@ -16,10 +15,16 @@ Chunk::Chunk(const ChunkPosition &position,
   BlockStore blocks;
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
-      float noiseX = position.xPosition * Constants::Chunk::LENGTH;
-      noiseX += blockX;
-      float noiseZ = position.zPosition * Constants::Chunk::LENGTH;
-      noiseZ += blockZ;
+      // Treat `position` as the chunk center: compute a base such that
+      // block coordinates range from (center - LENGTH/2) .. (center + LENGTH/2
+      // - 1)
+      float baseX = position.xPosition * Constants::Chunk::LENGTH -
+                    (Constants::Chunk::LENGTH / 2.0f);
+      float baseZ = position.zPosition * Constants::Chunk::LENGTH -
+                    (Constants::Chunk::LENGTH / 2.0f);
+
+      float noiseX = baseX + blockX;
+      float noiseZ = baseZ + blockZ;
 
       // (-1, 1) -> (0, 1)
       float noiseY = noiseGenerator.GetNoise(noiseX, noiseZ);
@@ -45,8 +50,6 @@ Chunk::Chunk(const ChunkPosition &position,
     }
   }
 
-  float baseX = position.xPosition * Constants::Chunk::LENGTH;
-  float baseZ = position.zPosition * Constants::Chunk::LENGTH;
   m_VboData = getVboFromStore(blocks, position);
 
   glGenVertexArrays(1, &m_VAO);
@@ -81,8 +84,12 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
                                           const ChunkPosition &position) {
   std::vector<float> vertices;
 
-  int chunkXToPosition = position.xPosition * Constants::Chunk::LENGTH;
-  int chunkZToPosition = position.zPosition * Constants::Chunk::LENGTH;
+    int chunkXToPosition = static_cast<int>(
+      position.xPosition * Constants::Chunk::LENGTH -
+      (Constants::Chunk::LENGTH / 2.0f));
+    int chunkZToPosition = static_cast<int>(
+      position.zPosition * Constants::Chunk::LENGTH -
+      (Constants::Chunk::LENGTH / 2.0f));
 
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockY = 0; blockY < Constants::Chunk::HEIGHT; blockY++) {
@@ -118,9 +125,6 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
           x = chunkXToPosition + blockX;
           y = blockY + 1;
           z = chunkZToPosition + blockZ;
-
-          glm::vec3 color;
-
           currentData = {
               // First triangle
               x, y, z, 0.0, 1.0, 0.0, color[0], color[1],
