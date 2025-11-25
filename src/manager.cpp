@@ -8,7 +8,6 @@
 
 #include "chunk.h"
 #include "config.h"
-#include "frustum.h"
 #include "manager.h"
 
 ChunkManager::ChunkManager() {
@@ -88,12 +87,11 @@ void ChunkManager::render(const Camera& camera) {
   }
 
   glUseProgram(m_Shader.getId());
-  Frustum frustum(camera, camera.m_Aspect, camera.m_Fov,
-                  Constants::Camera::NEAR, Constants::Camera::FAR);
 
   for (auto& value : m_Chunks) {
     const ChunkPosition& position = value.first;
-    if (!frustum.isChunkInside(position)) {
+    
+    if (!camera.isChunkInside(position)) {
       continue;
     }
 
