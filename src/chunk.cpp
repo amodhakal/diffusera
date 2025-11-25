@@ -51,20 +51,23 @@ Chunk::Chunk(const ChunkPosition &position,
     }
   }
 
-  m_VboData = getVboFromStore(blocks, position);
+  std::vector<float> vboData = getVboFromStore(blocks, position);
 
   glGenVertexArrays(1, &m_VAO);
   glGenBuffers(1, &m_VBO);
 
   glBindVertexArray(m_VAO);
   glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-  glBufferData(GL_ARRAY_BUFFER, m_VboData.size() * sizeof(float),
-               m_VboData.data(), GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, vboData.size() * sizeof(float), vboData.data(),
+               GL_STATIC_DRAW);
+
+  // Clean up the large vbo data once setup the chunk
+  m_VboSize = vboData.size();
+  vboData.clear();
+  vboData.shrink_to_fit();
 
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)0);
   glEnableVertexAttribArray(0);
-  // Normal is stored as a single float in the VBO (0,1,2,3), so use a
-  // single-component float attribute and cast to int in the vertex shader.
   glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
                         (void *)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
@@ -86,7 +89,7 @@ void Chunk::cleanup() {
 void Chunk::render() {
   glBindVertexArray(m_VAO);
   // Each vertex has 7 floats (position.xyz + normal + color.rgb).
-  glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_VboData.size() / 7));
+  glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_VboSize / 7));
 }
 
 std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
