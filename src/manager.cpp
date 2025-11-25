@@ -1,5 +1,4 @@
-#include <__ostream/print.h>
-#define GL_SILENCE_DEPRECATION
+#include "manager.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -8,7 +7,6 @@
 
 #include "chunk.h"
 #include "config.h"
-#include "manager.h"
 
 ChunkManager::ChunkManager() {
   float seed = std::rand();
@@ -22,11 +20,10 @@ ChunkManager::ChunkManager() {
   m_NoiseGenerator.SetFrequency(Constants::Noise::FREQUENCY);
 }
 
-void ChunkManager::load(const Shader& shader) {
-  m_Shader = shader;
+void ChunkManager::load() {
 }
 
-void ChunkManager::render(const Camera& camera) {
+void ChunkManager::render(const Camera& camera, Shader& shader) {
   glm::vec3 cameraPosition = camera.m_Position;
 
   for (auto it = m_Chunks.begin(); it != m_Chunks.end();) {
@@ -86,11 +83,11 @@ void ChunkManager::render(const Camera& camera) {
     }
   }
 
-  glUseProgram(m_Shader.getId());
+  shader.use();
 
   for (auto& value : m_Chunks) {
     const ChunkPosition& position = value.first;
-    
+
     if (!camera.isChunkInside(position)) {
       continue;
     }

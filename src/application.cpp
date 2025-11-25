@@ -44,7 +44,7 @@ Application::Application(const char* title, const uint width, const uint height,
   }
 
   m_Shader.load(Constants::VERTEX_PATH, Constants::FRAGMENT_PATH);
-  m_ChunkManager.load(m_Shader);
+  m_ChunkManager.load();
 
   glEnable(GL_DEPTH_TEST);
   glClearColor(bgColor[0], bgColor[1], bgColor[2], bgColor[3]);
@@ -70,7 +70,7 @@ void Application::update() {
   m_Shader.setUniformMat4("uView", glm::value_ptr(view));
   glm::mat4 projection = m_Camera.getProjection();
   m_Shader.setUniformMat4("uProjection", glm::value_ptr(projection));
-  m_ChunkManager.render(m_Camera);
+  m_ChunkManager.render(m_Camera, m_Shader);
 
   glfwSwapBuffers(m_Window);
   glfwPollEvents();

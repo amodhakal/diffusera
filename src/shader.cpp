@@ -54,6 +54,10 @@ void Shader::load(const char* vertexPath, const char* fragmentPath) {
   m_Id = shaderProgram;
 }
 
+void Shader::use() {
+  glUseProgram(m_Id);
+}
+
 uint Shader::getId() {
   return m_Id;
 }

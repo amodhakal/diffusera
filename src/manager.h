@@ -11,12 +11,10 @@
 class ChunkManager {
  public:
   ChunkManager();
-  void load(const Shader& shader);
-  void render(const Camera& cmaera);
+  void load();
+  void render(const Camera& camera, Shader& shader);
 
  private:
-  Shader m_Shader;
   FastNoiseLite m_NoiseGenerator;
-
   std::unordered_map<ChunkPosition, Chunk> m_Chunks;
 };

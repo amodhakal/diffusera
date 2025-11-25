@@ -9,6 +9,7 @@ class Shader {
  public:
   Shader();
   void load(const char* vertexPath, const char* fragmentPath);
+  void use();
   uint getId();
 
   void newUniform(const char* name);

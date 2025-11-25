@@ -13,3 +13,5 @@
 - **Fixed Frustum culling/Reduced normal sent:** 293.92 fps
 
 ## (16 chunks with DO_TRIANGLE_LINE to false)
+
+- **Current:** 94.52 fps and 2.71 GB
