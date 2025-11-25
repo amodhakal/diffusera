@@ -8,6 +8,17 @@
 #include "chunk.h"
 #include "shader.h"
 
+namespace std {
+template <>
+struct hash<glm::vec2> {
+  size_t operator()(glm::vec2 const& v) const noexcept {
+    size_t h1 = std::hash<float>{}(v.s);
+    size_t h2 = std::hash<float>{}(v.t);
+    return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2));
+  }
+};
+}  // namespace std
+
 class ChunkManager {
  public:
   ChunkManager();
@@ -16,5 +27,5 @@ class ChunkManager {
 
  private:
   FastNoiseLite m_NoiseGenerator;
-  std::unordered_map<ChunkPosition, Chunk> m_Chunks;
+  std::unordered_map<glm::vec2, Chunk> m_Chunks;
 };

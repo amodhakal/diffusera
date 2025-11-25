@@ -25,7 +25,7 @@ The initial milestone focused on building the foundation required for an infinit
 **Dynamic Chunk Management**
 
 - A `ChunkManager` loads and unloads chunks based on camera position
-- Chunks stored in an `std::unordered_map` keyed by a custom `ChunkPosition` hash
+- Chunks stored in an `std::unordered_map` keyed by a custom `glm::vec2` hash
 - Fixed render distance; out-of-range chunks are pruned each frame
 - Supports a theoretically infinite world while keeping memory bounded
 

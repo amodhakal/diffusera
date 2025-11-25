@@ -29,5 +29,5 @@ struct Camera {
   glm::mat4 getProjection();
   glm::vec3 getRight() const;
 
-  bool isChunkInside(const ChunkPosition& position) const;
+  bool isChunkInside(const glm::vec2& position) const;
 };

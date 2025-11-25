@@ -92,7 +92,7 @@ glm::vec3 Camera::getRight() const {
   return glm::normalize(glm::cross(m_Up, m_WorldUp));
 }
 
-bool Camera::isChunkInside(const ChunkPosition& position) const {
+bool Camera::isChunkInside(const glm::vec2& position) const {
   // TODO: THe frustum setup shouldn't be repeated
   // Frustum initialization
   float halfVSide = m_Far * tan(m_Fov * 0.5);
@@ -113,10 +113,10 @@ bool Camera::isChunkInside(const ChunkPosition& position) const {
   // Frustum checking
 
   glm::vec3 chunkCorner1 = {
-      static_cast<float>((position.xPosition * Constants::Chunk::LENGTH) -
+      static_cast<float>((position.s * Constants::Chunk::LENGTH) -
                          (Constants::Chunk::LENGTH / 2.0)),
       0.0,
-      static_cast<float>((position.zPosition * Constants::Chunk::LENGTH) -
+      static_cast<float>((position.t * Constants::Chunk::LENGTH) -
                          (Constants::Chunk::LENGTH / 2.0))};
   glm::vec3 chunkCorner2 = {chunkCorner1.x + Constants::Chunk::LENGTH,
                             Constants::Chunk::HEIGHT,

@@ -7,24 +7,6 @@
 #include "config.h"
 #include "noise/noise.h"
 
-struct ChunkPosition {
-  int xPosition;
-  int zPosition;
-
-  bool operator==(const ChunkPosition& other) const {
-    return xPosition == other.xPosition && zPosition == other.zPosition;
-  }
-};
-
-template <>
-struct std::hash<ChunkPosition> {
-  std::size_t operator()(const ChunkPosition& pos) const noexcept {
-    std::size_t h1 = std::hash<int>{}(pos.xPosition);
-    std::size_t h2 = std::hash<int>{}(pos.zPosition);
-    return h1 ^ (h2 << 1);
-  }
-};
-
 enum BlockType { AIR, GRASS, DIRT };
 
 enum BlockNormal {
@@ -40,7 +22,7 @@ typedef BlockType BlockStore[Constants::Chunk::LENGTH][Constants::Chunk::HEIGHT]
 class Chunk {
  public:
   Chunk() = default;
-  Chunk(const ChunkPosition& position, const FastNoiseLite& noiseGenerator);
+  Chunk(const glm::vec2& position, const FastNoiseLite& noiseGenerator);
 
   void render();
   void cleanup();
@@ -51,5 +33,5 @@ class Chunk {
   uint m_VboSize;
 
   std::vector<float> getVboFromStore(const BlockStore& blocks,
-                                     const ChunkPosition& position);
+                                     const glm::vec2& position);
 };

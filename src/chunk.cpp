@@ -10,18 +10,17 @@
 
 #include "config.h"
 
-Chunk::Chunk(const ChunkPosition &position,
-             const FastNoiseLite &noiseGenerator) {
+Chunk::Chunk(const glm::vec2 &position, const FastNoiseLite &noiseGenerator) {
   BlockStore blocks;
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
-      if (position.xPosition < 0 || position.zPosition < 0) {
+      if (position.s < 0 || position.t < 0) {
         bool isHere = false;
       }
 
-      float baseX = position.xPosition * Constants::Chunk::LENGTH -
+      float baseX = position.s * Constants::Chunk::LENGTH -
                     (Constants::Chunk::LENGTH / 2.0f);
-      float baseZ = position.zPosition * Constants::Chunk::LENGTH -
+      float baseZ = position.t * Constants::Chunk::LENGTH -
                     (Constants::Chunk::LENGTH / 2.0f);
 
       float noiseX = baseX + blockX;
@@ -93,14 +92,14 @@ void Chunk::render() {
 }
 
 std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
-                                          const ChunkPosition &position) {
+                                          const glm::vec2 &position) {
   std::vector<float> vertices;
 
   int chunkXToPosition =
-      static_cast<int>(position.xPosition * Constants::Chunk::LENGTH -
+      static_cast<int>(position.s * Constants::Chunk::LENGTH -
                        (Constants::Chunk::LENGTH / 2.0f));
   int chunkZToPosition =
-      static_cast<int>(position.zPosition * Constants::Chunk::LENGTH -
+      static_cast<int>(position.t * Constants::Chunk::LENGTH -
                        (Constants::Chunk::LENGTH / 2.0f));
 
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {

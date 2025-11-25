@@ -27,10 +27,10 @@ void ChunkManager::render(const Camera& camera, Shader& shader) {
   glm::vec3 cameraPosition = camera.m_Position;
 
   for (auto it = m_Chunks.begin(); it != m_Chunks.end();) {
-    const ChunkPosition& position = it->first;
-    float chunkCenterX = position.xPosition * Constants::Chunk::LENGTH -
+    const glm::vec2& position = it->first;
+    float chunkCenterX = position.s * Constants::Chunk::LENGTH -
                          (Constants::Chunk::LENGTH / 2.0f);
-    float chunkCenterZ = position.zPosition * Constants::Chunk::LENGTH -
+    float chunkCenterZ = position.t * Constants::Chunk::LENGTH -
                          (Constants::Chunk::LENGTH / 2.0f);
 
     float xDisplacement = chunkCenterX - cameraPosition.x;
@@ -61,10 +61,10 @@ void ChunkManager::render(const Camera& camera, Shader& shader) {
     for (int chunkZ = currentChunkZ - Constants::Chunk::RENDER_DISTANCE_CHUNKS;
          chunkZ <= currentChunkZ + Constants::Chunk::RENDER_DISTANCE_CHUNKS;
          chunkZ++) {
-      ChunkPosition position = {chunkX, chunkZ};
-      float chunkCenterX = position.xPosition * Constants::Chunk::LENGTH -
+      glm::vec2 position = {chunkX, chunkZ};
+      float chunkCenterX = position.s * Constants::Chunk::LENGTH -
                            (Constants::Chunk::LENGTH / 2.0f);
-      float chunkCenterZ = position.zPosition * Constants::Chunk::LENGTH -
+      float chunkCenterZ = position.t * Constants::Chunk::LENGTH -
                            (Constants::Chunk::LENGTH / 2.0f);
 
       float xDisplacement = chunkCenterX - cameraPosition.x;
@@ -87,7 +87,7 @@ void ChunkManager::render(const Camera& camera, Shader& shader) {
   shader.use();
 
   for (auto& value : m_Chunks) {
-    const ChunkPosition& position = value.first;
+    const glm::vec2& position = value.first;
 
     if (!camera.isChunkInside(position)) {
       continue;
