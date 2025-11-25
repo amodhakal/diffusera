@@ -40,6 +40,7 @@ void ChunkManager::render(const Camera& camera, Shader& shader) {
         (xDisplacement * xDisplacement) + (zDisplacement * zDisplacement);
     if (distanceSquared > Constants::Chunk::RENDER_DISTANCE_BLOCKS *
                               Constants::Chunk::RENDER_DISTANCE_BLOCKS) {
+      it->second.cleanup();
       it = m_Chunks.erase(it);
       continue;
     }

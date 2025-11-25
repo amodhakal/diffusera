@@ -78,6 +78,11 @@ Chunk::Chunk(const ChunkPosition &position,
   }
 }
 
+void Chunk::cleanup() {
+  glDeleteBuffers(1, &m_VBO);
+  glDeleteVertexArrays(1, &m_VAO);
+}
+
 void Chunk::render() {
   glBindVertexArray(m_VAO);
   // Each vertex has 7 floats (position.xyz + normal + color.rgb).

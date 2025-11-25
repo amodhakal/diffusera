@@ -41,7 +41,9 @@ class Chunk {
  public:
   Chunk() = default;
   Chunk(const ChunkPosition& position, const FastNoiseLite& noiseGenerator);
+
   void render();
+  void cleanup();
 
  private:
   uint m_VAO;
