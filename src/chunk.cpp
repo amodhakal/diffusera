@@ -18,11 +18,8 @@ Chunk::Chunk(const glm::vec2 &position, const FastNoiseLite &noiseGenerator) {
         bool isHere = false;
       }
 
-      float baseX = position.s * Constants::Chunk::LENGTH -
-                    (Constants::Chunk::LENGTH / 2.0f);
-      float baseZ = position.t * Constants::Chunk::LENGTH -
-                    (Constants::Chunk::LENGTH / 2.0f);
-
+      float baseX = position.s * Constants::Chunk::LENGTH;
+      float baseZ = position.t * Constants::Chunk::LENGTH;
       float noiseX = baseX + blockX;
       float noiseZ = baseZ + blockZ;
 
@@ -95,12 +92,8 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
                                           const glm::vec2 &position) {
   std::vector<float> vertices;
 
-  int chunkXToPosition =
-      static_cast<int>(position.s * Constants::Chunk::LENGTH -
-                       (Constants::Chunk::LENGTH / 2.0f));
-  int chunkZToPosition =
-      static_cast<int>(position.t * Constants::Chunk::LENGTH -
-                       (Constants::Chunk::LENGTH / 2.0f));
+  int chunkXToPosition = 0;
+  int chunkZToPosition = 0;
 
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockY = 0; blockY < Constants::Chunk::HEIGHT; blockY++) {
@@ -133,9 +126,9 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
         // Top
         if (blockY + 1 == Constants::Chunk::HEIGHT ||
             blocks[blockX][blockY + 1][blockZ] == BlockType::AIR) {
-          x = chunkXToPosition + blockX;
+          x = blockX;
           y = blockY + 1;
-          z = chunkZToPosition + blockZ;
+          z = blockZ;
           currentData = {
               // First triangle
               x, y, z, BlockNormal::TOP_NORMAL, color[0], color[1],

@@ -13,7 +13,7 @@ class Shader {
   uint getId();
 
   void newUniform(const char* name);
-  void setUniformMat4(const char* name, float* values);
+  void setUniformMat4(const char* name, const glm::mat4& values);
 
  private:
   uint m_Id;

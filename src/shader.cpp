@@ -1,11 +1,12 @@
+#define GL_SILENCE_DEPRECATION
 #include "shader.h"
 
-#include "io.h"
+#include <glad/glad.h>
 
-#define GL_SILENCE_DEPRECATION
-#include <GLFW/glfw3.h>
-
+#include <glm/gtc/type_ptr.hpp>
 #include <string>
+
+#include "io.h"
 
 uint setupShaders(const char* filePath, const uint shaderType) {
   const std::string shaderCodeRaw = IO::getFullFileContents(filePath);
@@ -66,6 +67,6 @@ void Shader::newUniform(const char* name) {
   m_Uniforms[name] = glGetUniformLocation(m_Id, name);
 }
 
-void Shader::setUniformMat4(const char* name, float* values) {
-  glUniformMatrix4fv(m_Uniforms[name], 1, GL_FALSE, values);
+void Shader::setUniformMat4(const char* name, const glm::mat4& values) {
+  glUniformMatrix4fv(m_Uniforms[name], 1, GL_FALSE, glm::value_ptr(values));
 }

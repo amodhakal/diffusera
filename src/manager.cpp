@@ -90,10 +90,20 @@ void ChunkManager::render(const Camera& camera, Shader& shader) {
     const glm::vec2& position = value.first;
 
     if (!camera.isChunkInside(position)) {
+      // TODO Fix frustum
       continue;
     }
 
     Chunk& chunk = value.second;
+
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(
+        model,
+        glm::vec3(static_cast<float>(position.s * Constants::Chunk::LENGTH),
+                  0.0f,
+                  static_cast<float>(position.t * Constants::Chunk::LENGTH)));
+    shader.setUniformMat4("uModel", model);
+
     chunk.render();
   }
 }

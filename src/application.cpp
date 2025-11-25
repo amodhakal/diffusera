@@ -1,6 +1,4 @@
 #define GL_SILENCE_DEPRECATION
-#include <glad/glad.h>
-
 #include "application.h"
 
 #include <glm/gtc/type_ptr.hpp>
@@ -49,6 +47,7 @@ Application::Application(const char* title, const uint width, const uint height,
   glEnable(GL_DEPTH_TEST);
   glClearColor(bgColor[0], bgColor[1], bgColor[2], bgColor[3]);
 
+  m_Shader.newUniform("uModel");
   m_Shader.newUniform("uView");
   m_Shader.newUniform("uProjection");
 }
@@ -67,9 +66,11 @@ void Application::update() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   glm::mat4 view = m_Camera.getView();
-  m_Shader.setUniformMat4("uView", glm::value_ptr(view));
   glm::mat4 projection = m_Camera.getProjection();
-  m_Shader.setUniformMat4("uProjection", glm::value_ptr(projection));
+
+  m_Shader.setUniformMat4("uView", view);
+  m_Shader.setUniformMat4("uProjection", projection);
+
   m_ChunkManager.render(m_Camera, m_Shader);
 
   glfwSwapBuffers(m_Window);
