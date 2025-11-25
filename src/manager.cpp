@@ -26,7 +26,7 @@ void ChunkManager::load() {
 void ChunkManager::render(const Camera& camera, Shader& shader) {
   glm::vec3 cameraPosition = camera.m_Position;
 
-  for (auto it = m_Chunks.begin(); it != m_Chunks.end();) {
+  for (auto it = m_ProcessedChunks.begin(); it != m_ProcessedChunks.end();) {
     const glm::vec2& position = it->first;
     float chunkCenterX = position.s * Constants::Chunk::LENGTH -
                          (Constants::Chunk::LENGTH / 2.0f);
@@ -41,7 +41,7 @@ void ChunkManager::render(const Camera& camera, Shader& shader) {
     if (distanceSquared > Constants::Chunk::RENDER_DISTANCE_BLOCKS *
                               Constants::Chunk::RENDER_DISTANCE_BLOCKS) {
       it->second.cleanup();
-      it = m_Chunks.erase(it);
+      it = m_ProcessedChunks.erase(it);
       continue;
     }
 
@@ -78,15 +78,26 @@ void ChunkManager::render(const Camera& camera, Shader& shader) {
         continue;
       }
 
-      if (m_Chunks.find(position) == m_Chunks.end()) {
-        m_Chunks.emplace(position, Chunk(position, m_NoiseGenerator));
+      if (m_ProcessedChunks.contains(position)) {
+        // Chunk already processed
+        continue;
       }
+
+      if (m_ProcessingChunks.contains(position)) {
+        // Chunk in the process of being processed;
+        continue;
+      }
+
+      // If item already is processing, List that the the item is trying to be
+      // processing and process it. Once done, add to the processed queue and
+      // remove it from the processing setup
+      m_ProcessedChunks.emplace(position, Chunk(position, m_NoiseGenerator));
     }
   }
 
   shader.use();
 
-  for (auto& value : m_Chunks) {
+  for (auto& value : m_ProcessedChunks) {
     const glm::vec2& position = value.first;
 
     if (!camera.isChunkInside(position)) {

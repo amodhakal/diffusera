@@ -3,6 +3,7 @@
 #include <sys/types.h>
 
 #include <unordered_map>
+#include <unordered_set>
 
 #include "camera.h"
 #include "chunk.h"
@@ -17,6 +18,7 @@ struct hash<glm::vec2> {
     return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2));
   }
 };
+
 }  // namespace std
 
 class ChunkManager {
@@ -27,5 +29,6 @@ class ChunkManager {
 
  private:
   FastNoiseLite m_NoiseGenerator;
-  std::unordered_map<glm::vec2, Chunk> m_Chunks;
+  std::unordered_map<glm::vec2, Chunk> m_ProcessedChunks;
+  std::unordered_set<glm::vec2> m_ProcessingChunks;
 };
