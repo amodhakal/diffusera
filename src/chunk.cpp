@@ -15,9 +15,10 @@ Chunk::Chunk(const ChunkPosition &position,
   BlockStore blocks;
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
-      // Treat `position` as the chunk center: compute a base such that
-      // block coordinates range from (center - LENGTH/2) .. (center + LENGTH/2
-      // - 1)
+      if (position.xPosition < 0 || position.zPosition < 0) {
+        bool isHere = false;
+      }
+
       float baseX = position.xPosition * Constants::Chunk::LENGTH -
                     (Constants::Chunk::LENGTH / 2.0f);
       float baseZ = position.zPosition * Constants::Chunk::LENGTH -
@@ -60,14 +61,16 @@ Chunk::Chunk(const ChunkPosition &position,
   glBufferData(GL_ARRAY_BUFFER, m_VboData.size() * sizeof(float),
                m_VboData.data(), GL_STATIC_DRAW);
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)0);
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float),
+  // Normal is stored as a single float in the VBO (0,1,2,3), so use a
+  // single-component float attribute and cast to int in the vertex shader.
+  glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
                         (void *)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
 
-  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float),
-                        (void *)(6 * sizeof(float)));
+  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
+                        (void *)(4 * sizeof(float)));
   glEnableVertexAttribArray(2);
 
   if (Constants::DO_TRIANGLE_LINE) {
@@ -77,19 +80,20 @@ Chunk::Chunk(const ChunkPosition &position,
 
 void Chunk::render() {
   glBindVertexArray(m_VAO);
-  glDrawArrays(GL_TRIANGLES, 0, m_VboData.size() / 9);
+  // Each vertex has 7 floats (position.xyz + normal + color.rgb).
+  glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_VboData.size() / 7));
 }
 
 std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
                                           const ChunkPosition &position) {
   std::vector<float> vertices;
 
-    int chunkXToPosition = static_cast<int>(
-      position.xPosition * Constants::Chunk::LENGTH -
-      (Constants::Chunk::LENGTH / 2.0f));
-    int chunkZToPosition = static_cast<int>(
-      position.zPosition * Constants::Chunk::LENGTH -
-      (Constants::Chunk::LENGTH / 2.0f));
+  int chunkXToPosition =
+      static_cast<int>(position.xPosition * Constants::Chunk::LENGTH -
+                       (Constants::Chunk::LENGTH / 2.0f));
+  int chunkZToPosition =
+      static_cast<int>(position.zPosition * Constants::Chunk::LENGTH -
+                       (Constants::Chunk::LENGTH / 2.0f));
 
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockY = 0; blockY < Constants::Chunk::HEIGHT; blockY++) {
@@ -127,19 +131,19 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
           z = chunkZToPosition + blockZ;
           currentData = {
               // First triangle
-              x, y, z, 0.0, 1.0, 0.0, color[0], color[1],
+              x, y, z, BlockNormal::TOP_NORMAL, color[0], color[1],
               color[2],  // bottom-left
-              x + 1, y, z, 0.0, 1.0, 0.0, color[0], color[1],
+              x + 1, y, z, BlockNormal::TOP_NORMAL, color[0], color[1],
               color[2],  // bottom-right
-              x, y, z + 1, 0.0, 1.0, 0.0, color[0], color[1],
+              x, y, z + 1, BlockNormal::TOP_NORMAL, color[0], color[1],
               color[2],  // top-left
 
               // Second triangle
-              x + 1, y, z, 0.0, 1.0, 0.0, color[0], color[1],
+              x + 1, y, z, BlockNormal::TOP_NORMAL, color[0], color[1],
               color[2],  // bottom-right
-              x + 1, y, z + 1, 0.0, 1.0, 0.0, color[0], color[1],
+              x + 1, y, z + 1, BlockNormal::TOP_NORMAL, color[0], color[1],
               color[2],  // top-right
-              x, y, z + 1, 0.0, 1.0, 0.0, color[0], color[1],
+              x, y, z + 1, BlockNormal::TOP_NORMAL, color[0], color[1],
               color[2]  // top-left
           };
 
@@ -155,19 +159,19 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
 
           currentData = {
               // First triangle
-              x, y, z, 0.0, -1.0, 0.0, color[0], color[1],
+              x, y, z, BlockNormal::BOTTOM_NORMAL, color[0], color[1],
               color[2],  // bottom-left
-              x + 1, y, z, 0.0, -1.0, 0.0, color[0], color[1],
+              x + 1, y, z, BlockNormal::BOTTOM_NORMAL, color[0], color[1],
               color[2],  // bottom-right
-              x, y, z + 1, 0.0, -1.0, 0.0, color[0], color[1],
+              x, y, z + 1, BlockNormal::BOTTOM_NORMAL, color[0], color[1],
               color[2],  // top-left
 
               // Second triangle
-              x + 1, y, z, 0.0, -1.0, 0.0, color[0], color[1],
+              x + 1, y, z, BlockNormal::BOTTOM_NORMAL, color[0], color[1],
               color[2],  // bottom-right
-              x + 1, y, z + 1, 0.0, -1.0, 0.0, color[0], color[1],
+              x + 1, y, z + 1, BlockNormal::BOTTOM_NORMAL, color[0], color[1],
               color[2],  // top-right
-              x, y, z + 1, 0.0, -1.0, 0.0, color[0], color[1],
+              x, y, z + 1, BlockNormal::BOTTOM_NORMAL, color[0], color[1],
               color[2]  // top-left
           };
 
@@ -183,19 +187,20 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
 
           currentData = {
               // First triangle
-              x, y, z, 0.0, 0.0, 1.0, color[0], color[1],
+              x, y, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
               color[2],  // bottom-left
-              x + 1, y, z, 0.0, 0.0, 1.0, color[0], color[1],
+              x + 1, y, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
               color[2],  // bottom-right
-              x, y + 1, z, 0.0, 0.0, 1.0, color[0], color[1],
+              x, y + 1, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
               color[2],  // top-left
 
               // Second triangle
-              x + 1, y, z, 0.0, 0.0, 1.0, color[0], color[1],
+              x + 1, y, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
               color[2],  // bottom-right
-              x + 1, y + 1, z, 0.0, 0.0, 1.0, color[0], color[1],
+              x + 1, y + 1, z, BlockNormal::FRONT_BACK_NORMAL, color[0],
+              color[1],
               color[2],  // top-right
-              x, y + 1, z, 0.0, 0.0, 1.0, color[0], color[1],
+              x, y + 1, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
               color[2]  // top-left
           };
 
@@ -211,19 +216,20 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
 
           currentData = {
               // First triangle
-              x, y, z, 0.0, 0.0, -1.0, color[0], color[1],
+              x, y, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
               color[2],  // bottom-left
-              x + 1, y, z, 0.0, 0.0, -1.0, color[0], color[1],
+              x + 1, y, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
               color[2],  // bottom-right
-              x, y + 1, z, 0.0, 0.0, -1.0, color[0], color[1],
+              x, y + 1, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
               color[2],  // top-left
 
               // Second triangle
-              x + 1, y, z, 0.0, 0.0, -1.0, color[0], color[1],
+              x + 1, y, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
               color[2],  // bottom-right
-              x + 1, y + 1, z, 0.0, 0.0, -1.0, color[0], color[1],
+              x + 1, y + 1, z, BlockNormal::FRONT_BACK_NORMAL, color[0],
+              color[1],
               color[2],  // top-right
-              x, y + 1, z, 0.0, 0.0, -1.0, color[0], color[1],
+              x, y + 1, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
               color[2]  // top-left
           };
 
@@ -239,19 +245,20 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
 
           currentData = {
               // First triangle
-              x, y, z, -1.0, 0.0, 0.0, color[0], color[1],
+              x, y, z, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
               color[2],  // bottom-left
-              x, y, z + 1, -1.0, 0.0, 0.0, color[0], color[1],
+              x, y, z + 1, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
               color[2],  // bottom-right
-              x, y + 1, z, -1.0, 0.0, 0.0, color[0], color[1],
+              x, y + 1, z, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
               color[2],  // top-left
 
               // Second triangle
-              x, y, z + 1, -1.0, 0.0, 0.0, color[0], color[1],
+              x, y, z + 1, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
               color[2],  // bottom-right
-              x, y + 1, z + 1, -1.0, 0.0, 0.0, color[0], color[1],
+              x, y + 1, z + 1, BlockNormal::RIGHT_LEFT_NORMAL, color[0],
+              color[1],
               color[2],  // top-right
-              x, y + 1, z, -1.0, 0.0, 0.0, color[0], color[1],
+              x, y + 1, z, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
               color[2]  // top-left
           };
 
@@ -267,19 +274,20 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
 
           currentData = {
               // First triangle
-              x, y, z, 1.0, 0.0, 0.0, color[0], color[1],
+              x, y, z, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
               color[2],  // bottom-left
-              x, y, z + 1, 1.0, 0.0, 0.0, color[0], color[1],
+              x, y, z + 1, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
               color[2],  // bottom-right
-              x, y + 1, z, 1.0, 0.0, 0.0, color[0], color[1],
+              x, y + 1, z, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
               color[2],  // top-left
 
               // Second triangle
-              x, y, z + 1, 1.0, 0.0, 0.0, color[0], color[1],
+              x, y, z + 1, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
               color[2],  // bottom-right
-              x, y + 1, z + 1, 1.0, 0.0, 0.0, color[0], color[1],
+              x, y + 1, z + 1, BlockNormal::RIGHT_LEFT_NORMAL, color[0],
+              color[1],
               color[2],  // top-right
-              x, y + 1, z, 1.0, 0.0, 0.0, color[0], color[1],
+              x, y + 1, z, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
               color[2]  // top-left
           };
 

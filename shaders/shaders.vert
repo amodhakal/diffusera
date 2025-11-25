@@ -1,11 +1,11 @@
 #version 330 core
 
 layout(location = 0) in vec3 inPosition;
-layout(location = 1) in vec3 inNormal;
+layout(location = 1) in float inNormal;
 layout(location = 2) in vec3 inColor;
 
 out vec3 fragColor;
-out vec3 fragNormal;
+flat out int fragNormal;
 out vec3 fragPosition;
 
 uniform mat4 uView;
@@ -15,5 +15,5 @@ void main() {
     gl_Position = uProjection * uView * vec4(inPosition, 1.0);
     fragPosition = inPosition;
     fragColor = inColor;
-    fragNormal = inNormal;
+    fragNormal = int(inNormal);
 }

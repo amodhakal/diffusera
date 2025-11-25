@@ -1,6 +1,5 @@
+#include <__ostream/print.h>
 #define GL_SILENCE_DEPRECATION
-
-#include "manager.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -10,6 +9,7 @@
 #include "chunk.h"
 #include "config.h"
 #include "frustum.h"
+#include "manager.h"
 
 ChunkManager::ChunkManager() {
   float seed = std::rand();

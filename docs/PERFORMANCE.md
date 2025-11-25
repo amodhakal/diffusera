@@ -7,6 +7,9 @@
 - **With basic noise FBM setup**: 6.0 fps
 - **Broken Frustum culling/circular rendering:** 878.38 fps
 
-## (8 chunks with DO_TRIANGLE_LINE)
+## (8 chunks with DO_TRIANGLE_LINE to false)
 
 - **Broken Frustum culling/circular rendering:** 240.11 fps
+- **Fixed Frustum culling/Reduced normal sent:** 293.92 fps
+
+## (16 chunks with DO_TRIANGLE_LINE to false)
