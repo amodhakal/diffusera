@@ -16,6 +16,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     src
     vendor/glad/include
     vendor/noise/include
+    vendor/images/include
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
