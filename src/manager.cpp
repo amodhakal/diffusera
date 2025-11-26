@@ -1,8 +1,10 @@
 #include "manager.h"
 
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <future>
 #include <glm/glm.hpp>
 
 #include "chunk.h"
@@ -48,6 +50,27 @@ void ChunkManager::render(const Camera& camera, Shader& shader) {
     ++it;
   }
 
+  for (auto it = m_ProcessingChunks.begin(); it != m_ProcessingChunks.end();) {
+    const glm::vec2 position = it->first;
+    std::future<std::vector<float>>& worker = it->second;
+
+    if (worker.wait_for(std::chrono::milliseconds(0)) !=
+        std::future_status::ready) {
+      // If current chunk worker not yet processed, continue
+      it++;
+      continue;
+    }
+
+    // Get the mesh data and process it (gl requires main thread)
+    std::vector<float> meshData = worker.get();
+    Chunk chunk(meshData);
+
+    // Remove from processing, add to processed
+    m_ProcessingPositions.erase(position);
+    m_ProcessedChunks[position] = std::move(chunk);
+    it = m_ProcessingChunks.erase(it);
+  }
+
   int currentChunkX = static_cast<int>(
       std::floor((cameraPosition.x + (Constants::Chunk::LENGTH / 2.0f)) /
                  Constants::Chunk::LENGTH));
@@ -83,22 +106,19 @@ void ChunkManager::render(const Camera& camera, Shader& shader) {
         continue;
       }
 
-      if (m_ProcessingChunks.contains(position)) {
+      if (m_ProcessingPositions.contains(position)) {
         // Chunk in the process of being processed;
         continue;
       }
 
-      m_ProcessingChunks.insert(position);
+      m_ProcessingPositions.insert(position);
 
-      Chunk chunk;
-      std::vector<float> meshData = chunk.generateMeshData(
-          position, m_NoiseGenerator);  // The generation can be parallized
-                                        // since no gl calls
-      chunk.useMeshData(
-          meshData);  // require gl calls - requires the main thread
-
-      m_ProcessingChunks.erase(position);
-      m_ProcessedChunks[position] = chunk;
+      // Ask the chunk to be generated in the background
+      FastNoiseLite& noiseCopy = m_NoiseGenerator;
+      m_ProcessingChunks[position] =
+          std::async(std::launch::async, [position, noiseCopy]() mutable {
+            return Chunk::generateMeshData(position, noiseCopy);
+          });
     }
   }
 
@@ -108,7 +128,6 @@ void ChunkManager::render(const Camera& camera, Shader& shader) {
     const glm::vec2& position = value.first;
 
     if (!camera.isChunkInside(position)) {
-      // TODO Fix frustum
       continue;
     }
 

@@ -10,6 +10,35 @@
 
 #include "config.h"
 
+Chunk::Chunk(std::vector<float> &meshData) {
+  glGenVertexArrays(1, &m_VAO);
+  glGenBuffers(1, &m_VBO);
+
+  glBindVertexArray(m_VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+  glBufferData(GL_ARRAY_BUFFER, meshData.size() * sizeof(float),
+               meshData.data(), GL_STATIC_DRAW);
+
+  // Clean up the large vbo data once setup the chunk
+  m_VboSize = meshData.size();
+  meshData.clear();
+  meshData.shrink_to_fit();
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)0);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
+                        (void *)(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
+
+  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
+                        (void *)(4 * sizeof(float)));
+  glEnableVertexAttribArray(2);
+
+  if (Constants::DO_TRIANGLE_LINE) {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  }
+}
+
 std::vector<float> Chunk::generateMeshData(
     const glm::vec2 &position, const FastNoiseLite &noiseGenerator) {
   BlockStore blocks;
@@ -256,35 +285,6 @@ std::vector<float> Chunk::generateMeshData(
   }
 
   return vertices;
-}
-
-void Chunk::useMeshData(std::vector<float> &meshData) {
-  glGenVertexArrays(1, &m_VAO);
-  glGenBuffers(1, &m_VBO);
-
-  glBindVertexArray(m_VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-  glBufferData(GL_ARRAY_BUFFER, meshData.size() * sizeof(float),
-               meshData.data(), GL_STATIC_DRAW);
-
-  // Clean up the large vbo data once setup the chunk
-  m_VboSize = meshData.size();
-  meshData.clear();
-  meshData.shrink_to_fit();
-
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)0);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
-                        (void *)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
-  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
-                        (void *)(4 * sizeof(float)));
-  glEnableVertexAttribArray(2);
-
-  if (Constants::DO_TRIANGLE_LINE) {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  }
 }
 
 void Chunk::cleanup() {

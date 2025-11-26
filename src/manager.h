@@ -2,8 +2,10 @@
 #include <noise/noise.h>
 #include <sys/types.h>
 
+#include <future>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "camera.h"
 #include "chunk.h"
@@ -30,5 +32,8 @@ class ChunkManager {
  private:
   FastNoiseLite m_NoiseGenerator;
   std::unordered_map<glm::vec2, Chunk> m_ProcessedChunks;
-  std::unordered_set<glm::vec2> m_ProcessingChunks;
+  std::unordered_set<glm::vec2> m_ProcessingPositions;
+
+  std::unordered_map<glm::vec2, std::future<std::vector<float>>>
+      m_ProcessingChunks;
 };

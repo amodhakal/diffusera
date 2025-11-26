@@ -22,10 +22,10 @@ typedef BlockType BlockStore[Constants::Chunk::LENGTH][Constants::Chunk::HEIGHT]
 class Chunk {
  public:
   Chunk() = default;
+  Chunk(std::vector<float>& meshData);
 
-  std::vector<float> generateMeshData(const glm::vec2& position,
-                                      const FastNoiseLite& noiseGenerator);
-  void useMeshData(std::vector<float>& meshData);
+  static std::vector<float> generateMeshData(
+      const glm::vec2& position, const FastNoiseLite& noiseGenerator);
 
   void render();
   void cleanup();
