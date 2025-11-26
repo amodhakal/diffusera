@@ -17,3 +17,7 @@
 - **Current:** 95 fps and 2.71 GB
 - **Clean up vbo data once used**: 95 fps and 868 MB
 - **Added multithreading to chunk data generation**: 124 fps and 921 MB
+
+## (24 chunks with DO_TRIANGLE_LINE to false)
+
+- **Current:** 54 fps and 1,650 MB
