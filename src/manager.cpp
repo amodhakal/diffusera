@@ -88,10 +88,17 @@ void ChunkManager::render(const Camera& camera, Shader& shader) {
         continue;
       }
 
-      // If item already is processing, List that the the item is trying to be
-      // processing and process it. Once done, add to the processed queue and
-      // remove it from the processing setup
-      m_ProcessedChunks.emplace(position, Chunk(position, m_NoiseGenerator));
+      m_ProcessingChunks.insert(position);
+
+      Chunk chunk;
+      std::vector<float> meshData = chunk.generateMeshData(
+          position, m_NoiseGenerator);  // The generation can be parallized
+                                        // since no gl calls
+      chunk.useMeshData(
+          meshData);  // require gl calls - requires the main thread
+
+      m_ProcessingChunks.erase(position);
+      m_ProcessedChunks[position] = chunk;
     }
   }
 

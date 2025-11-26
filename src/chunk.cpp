@@ -10,7 +10,8 @@
 
 #include "config.h"
 
-Chunk::Chunk(const glm::vec2 &position, const FastNoiseLite &noiseGenerator) {
+std::vector<float> Chunk::generateMeshData(
+    const glm::vec2 &position, const FastNoiseLite &noiseGenerator) {
   BlockStore blocks;
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
@@ -47,49 +48,6 @@ Chunk::Chunk(const glm::vec2 &position, const FastNoiseLite &noiseGenerator) {
     }
   }
 
-  std::vector<float> vboData = getVboFromStore(blocks, position);
-
-  glGenVertexArrays(1, &m_VAO);
-  glGenBuffers(1, &m_VBO);
-
-  glBindVertexArray(m_VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-  glBufferData(GL_ARRAY_BUFFER, vboData.size() * sizeof(float), vboData.data(),
-               GL_STATIC_DRAW);
-
-  // Clean up the large vbo data once setup the chunk
-  m_VboSize = vboData.size();
-  vboData.clear();
-  vboData.shrink_to_fit();
-
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)0);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
-                        (void *)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
-  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
-                        (void *)(4 * sizeof(float)));
-  glEnableVertexAttribArray(2);
-
-  if (Constants::DO_TRIANGLE_LINE) {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  }
-}
-
-void Chunk::cleanup() {
-  glDeleteBuffers(1, &m_VBO);
-  glDeleteVertexArrays(1, &m_VAO);
-}
-
-void Chunk::render() {
-  glBindVertexArray(m_VAO);
-  // Each vertex has 7 floats (position.xyz + normal + color.rgb).
-  glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_VboSize / 7));
-}
-
-std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
-                                          const glm::vec2 &position) {
   std::vector<float> vertices;
 
   int chunkXToPosition = 0;
@@ -298,4 +256,44 @@ std::vector<float> Chunk::getVboFromStore(const BlockStore &blocks,
   }
 
   return vertices;
+}
+
+void Chunk::useMeshData(std::vector<float> &meshData) {
+  glGenVertexArrays(1, &m_VAO);
+  glGenBuffers(1, &m_VBO);
+
+  glBindVertexArray(m_VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+  glBufferData(GL_ARRAY_BUFFER, meshData.size() * sizeof(float),
+               meshData.data(), GL_STATIC_DRAW);
+
+  // Clean up the large vbo data once setup the chunk
+  m_VboSize = meshData.size();
+  meshData.clear();
+  meshData.shrink_to_fit();
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)0);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
+                        (void *)(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
+
+  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
+                        (void *)(4 * sizeof(float)));
+  glEnableVertexAttribArray(2);
+
+  if (Constants::DO_TRIANGLE_LINE) {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  }
+}
+
+void Chunk::cleanup() {
+  glDeleteBuffers(1, &m_VBO);
+  glDeleteVertexArrays(1, &m_VAO);
+}
+
+void Chunk::render() {
+  glBindVertexArray(m_VAO);
+  // Each vertex has 7 floats (position.xyz + normal + color.rgb).
+  glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_VboSize / 7));
 }
