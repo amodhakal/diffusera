@@ -47,10 +47,10 @@ constexpr int MAX_BLOCK_HEIGHT = HEIGHT / 2.0;
 namespace Noise {
 constexpr auto NOISE_TYPE = FastNoiseLite::NoiseType_Perlin;
 constexpr auto FRACTAL_TYPE = FastNoiseLite::FractalType_FBm;
-constexpr float FRACTAL_OCTAVE = 100.0;
+constexpr float FRACTAL_OCTAVE = 2.0;
 constexpr float FRACTAL_GAIN = 0.5;
-constexpr float FRACTAL_LACUNARITY = 1.0;
-constexpr float FREQUENCY = 0.015;
+constexpr float FRACTAL_LACUNARITY = 2.1;
+constexpr float FREQUENCY = 0.01;
 
 }  // namespace Noise
 
