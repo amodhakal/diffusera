@@ -27,7 +27,7 @@ class ChunkManager {
  public:
   ChunkManager();
   void load();
-  void render(const Camera& camera, Shader& shader);
+  void render(const Camera* camera, Shader& shader);
 
  private:
   FastNoiseLite m_NoiseGenerator;

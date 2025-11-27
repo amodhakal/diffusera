@@ -25,8 +25,8 @@ ChunkManager::ChunkManager() {
 void ChunkManager::load() {
 }
 
-void ChunkManager::render(const Camera& camera, Shader& shader) {
-  glm::vec3 cameraPosition = camera.m_Position;
+void ChunkManager::render(const Camera* camera, Shader& shader) {
+  glm::vec3 cameraPosition = camera->m_Position;
 
   for (auto it = m_ProcessedChunks.begin(); it != m_ProcessedChunks.end();) {
     const glm::vec2& position = it->first;
@@ -127,7 +127,7 @@ void ChunkManager::render(const Camera& camera, Shader& shader) {
   for (auto& value : m_ProcessedChunks) {
     const glm::vec2& position = value.first;
 
-    if (!camera.isChunkInside(position)) {
+    if (!camera->isChunkInside(position)) {
       continue;
     }
 

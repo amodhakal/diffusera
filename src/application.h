@@ -7,6 +7,7 @@
 #include "camera.h"
 #include "config.h"
 #include "manager.h"
+#include "player.h"
 #include "shader.h"
 
 class Application {
@@ -19,19 +20,21 @@ class Application {
   bool isRunning();
   void update();
 
-  Camera* getCamera();
 
  private:
   GLFWwindow* m_Window;
   Shader m_Shader;
   ChunkManager m_ChunkManager;
-  Camera m_Camera;
+  Player m_Player;
 
   uint m_FpsAttempts;
   float m_CombinedDeltaTime;
   float m_lastFrame;
 
   float getDeltaTime();
+
+  void processMouseInput(double xPosition, double yPosition);
+  void processScrollInput(double xOffset, double yOffset);
 
   void handleKeyPress(float deltaTime);
   static void handleResizeCallback(GLFWwindow* window, int width, int height);

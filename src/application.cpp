@@ -11,7 +11,7 @@ Application::Application(const char* title, const uint width, const uint height,
                          glm::vec4 bgColor)
     : m_Shader(),
       m_ChunkManager(),
-      m_Camera(Constants::Camera::DEFAULT_POSITION),
+      m_Player(Constants::Camera::DEFAULT_POSITION),
       m_FpsAttempts(0),
       m_CombinedDeltaTime(0),
       m_lastFrame(0)
@@ -65,13 +65,14 @@ void Application::update() {
   handleKeyPress(deltaTime);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  glm::mat4 view = m_Camera.getView();
-  glm::mat4 projection = m_Camera.getProjection();
+  glm::mat4 view = m_Player.getView();
+  glm::mat4 projection = m_Player.getProjection();
 
   m_Shader.setUniformMat4("uView", view);
   m_Shader.setUniformMat4("uProjection", projection);
 
-  m_ChunkManager.render(m_Camera, m_Shader);
+  auto cameraPtr = m_Player.getCamera();
+  m_ChunkManager.render(cameraPtr, m_Shader);
 
   glfwSwapBuffers(m_Window);
   glfwPollEvents();
@@ -80,10 +81,6 @@ void Application::update() {
   if (err != GL_NO_ERROR) {
     std::println("OpenGL Error: {}", err);
   }
-}
-
-Camera* Application::getCamera() {
-  return &this->m_Camera;
 }
 
 float Application::getDeltaTime() {
@@ -105,13 +102,21 @@ float Application::getDeltaTime() {
   return deltaTime;
 }
 
+void Application::processMouseInput(double xPosition, double yPosition) {
+  return m_Player.getCamera()->processMouseInput(xPosition, yPosition);
+}
+
+void Application::processScrollInput(double xOffset, double yOffset) {
+  return m_Player.getCamera()->processScrollInput(xOffset, yOffset);
+}
+
 void Application::handleKeyPress(float deltaTime) {
   if (glfwGetKey(m_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(m_Window, true);
     return;
   }
 
-  m_Camera.processKeyInput(m_Window, deltaTime);
+  m_Player.getCamera()->processKeyInput(m_Window, deltaTime);
 }
 
 void Application::handleResizeCallback(GLFWwindow* window, int width,
@@ -122,11 +127,11 @@ void Application::handleResizeCallback(GLFWwindow* window, int width,
 void Application::handleMouseCallback(GLFWwindow* window, double xPosition,
                                       double yPosition) {
   auto* context = static_cast<Application*>(glfwGetWindowUserPointer(window));
-  context->getCamera()->processMouseInput(xPosition, yPosition);
+  context->processMouseInput(xPosition, yPosition);
 }
 
 void Application::handleScrollCallback(GLFWwindow* window, double xOffset,
                                        double yOffset) {
   auto* context = static_cast<Application*>(glfwGetWindowUserPointer(window));
-  context->getCamera()->processScrollInput(xOffset, yOffset);
+  context->processScrollInput(xOffset, yOffset);
 }
