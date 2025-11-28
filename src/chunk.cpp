@@ -32,6 +32,7 @@ void Chunk::generateMeshData(const glm::vec2 &position,
 
       uint grassHeight = static_cast<uint>(
           std::floor(noiseY * Constants::Chunk::MAX_BLOCK_HEIGHT));
+      m_HeightMap[blockX][blockZ] = grassHeight;
 
       for (int blockY = 0; blockY < grassHeight; blockY++) {
         m_Blocks[blockX][blockY][blockZ] = BlockType::DIRT;
@@ -290,4 +291,8 @@ void Chunk::render() {
   glBindVertexArray(m_VAO);
   // Each vertex has 7 floats (position.xyz + normal + color.rgb).
   glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_VboSize / 7));
+}
+
+uint Chunk::getHighestBlockY(uint blockX, uint blockZ) {
+  return m_HeightMap[blockX][blockZ];
 }

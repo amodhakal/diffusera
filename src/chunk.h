@@ -28,6 +28,7 @@ class Chunk {
   void pass();
   void render();
   void cleanup();
+  uint getHighestBlockY(uint blockX, uint blockZ);
 
  private:
   uint m_VAO;
@@ -36,4 +37,6 @@ class Chunk {
 
   BlockStore m_Blocks;
   std::vector<float> m_Data;
+
+  uint m_HeightMap[Constants::Chunk::LENGTH][Constants::Chunk::LENGTH];
 };

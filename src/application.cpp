@@ -85,7 +85,7 @@ void Application::update() {
 
   glm::vec3 cameraPosition = m_Player.getCamera()->m_Position;
   float highestY = m_ChunkManager.getPositionHighestY(cameraPosition);
-  m_Player.update(deltaTime, 100);
+  m_Player.update(deltaTime, highestY);
 }
 
 float Application::getDeltaTime() {

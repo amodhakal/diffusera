@@ -1,13 +1,18 @@
 #include "manager.h"
 
+#include <sys/types.h>
+
+#include <cassert>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <future>
+#include <algorithm>
 #include <glm/glm.hpp>
 
 #include "chunk.h"
+#include "config.h"
 
 ChunkManager::ChunkManager() {
   float seed = std::rand();
@@ -147,6 +152,33 @@ void ChunkManager::render(const Camera* camera, Shader& shader) {
 }
 
 float ChunkManager::getPositionHighestY(const glm::vec3& cameraPosition) {
-  // TODO: Implement this
-  return 100.0;
+  // Compute chunk coordinates using same logic as rendering to match keys
+  int chunkX = static_cast<int>(
+      std::floor((cameraPosition.x + (Constants::Chunk::LENGTH / 2.0f)) /
+                 Constants::Chunk::LENGTH));
+  int chunkZ = static_cast<int>(
+      std::floor((cameraPosition.z + (Constants::Chunk::LENGTH / 2.0f)) /
+                 Constants::Chunk::LENGTH));
+
+  glm::vec2 chunkPosition = {chunkX, chunkZ};
+
+  // Compute integer world block coords (floor) and convert to local chunk indices
+  int worldX = static_cast<int>(std::floor(cameraPosition.x));
+  int worldZ = static_cast<int>(std::floor(cameraPosition.z));
+
+  int localX = worldX - (chunkX * static_cast<int>(Constants::Chunk::LENGTH));
+  int localZ = worldZ - (chunkZ * static_cast<int>(Constants::Chunk::LENGTH));
+
+  // Ensure local indices are inside [0, LENGTH-1]
+  localX = std::clamp(localX, 0, static_cast<int>(Constants::Chunk::LENGTH - 1));
+  localZ = std::clamp(localZ, 0, static_cast<int>(Constants::Chunk::LENGTH - 1));
+
+  if (m_ProcessedChunks.contains(chunkPosition)) {
+    Chunk& chunk = m_ProcessedChunks[chunkPosition];
+    return static_cast<float>(
+        chunk.getHighestBlockY(static_cast<uint>(localX),
+                               static_cast<uint>(localZ)));
+  }
+
+  return static_cast<float>(Constants::Chunk::HEIGHT);
 }
