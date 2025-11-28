@@ -10,38 +10,8 @@
 
 #include "config.h"
 
-Chunk::Chunk(std::vector<float> &meshData) {
-  glGenVertexArrays(1, &m_VAO);
-  glGenBuffers(1, &m_VBO);
-
-  glBindVertexArray(m_VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-  glBufferData(GL_ARRAY_BUFFER, meshData.size() * sizeof(float),
-               meshData.data(), GL_STATIC_DRAW);
-
-  // Clean up the large vbo data once setup the chunk
-  m_VboSize = meshData.size();
-  meshData.clear();
-  meshData.shrink_to_fit();
-
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)0);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
-                        (void *)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
-  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
-                        (void *)(4 * sizeof(float)));
-  glEnableVertexAttribArray(2);
-
-  if (Constants::DO_TRIANGLE_LINE) {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  }
-}
-
-std::vector<float> Chunk::generateMeshData(
-    const glm::vec2 &position, const FastNoiseLite &noiseGenerator) {
-  BlockStore blocks;
+void Chunk::generateMeshData(const glm::vec2 &position,
+                             const FastNoiseLite &noiseGenerator) {
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
       if (position.s < 0 || position.t < 0) {
@@ -65,19 +35,17 @@ std::vector<float> Chunk::generateMeshData(
           std::floor(noiseY * Constants::Chunk::MAX_BLOCK_HEIGHT));
 
       for (int blockY = 0; blockY < grassHeight; blockY++) {
-        blocks[blockX][blockY][blockZ] = BlockType::DIRT;
+        m_Blocks[blockX][blockY][blockZ] = BlockType::DIRT;
       }
 
-      blocks[blockX][grassHeight][blockZ] = BlockType::GRASS;
+      m_Blocks[blockX][grassHeight][blockZ] = BlockType::GRASS;
 
       for (int blockY = grassHeight + 1; blockY < Constants::Chunk::HEIGHT;
            blockY++) {
-        blocks[blockX][blockY][blockZ] = BlockType::AIR;
+        m_Blocks[blockX][blockY][blockZ] = BlockType::AIR;
       }
     }
   }
-
-  std::vector<float> vertices;
 
   int chunkXToPosition = 0;
   int chunkZToPosition = 0;
@@ -85,7 +53,7 @@ std::vector<float> Chunk::generateMeshData(
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockY = 0; blockY < Constants::Chunk::HEIGHT; blockY++) {
       for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
-        BlockType current = blocks[blockX][blockY][blockZ];
+        BlockType current = m_Blocks[blockX][blockY][blockZ];
         glm::vec3 color;
 
         switch (current) {
@@ -112,7 +80,7 @@ std::vector<float> Chunk::generateMeshData(
 
         // Top
         if (blockY + 1 == Constants::Chunk::HEIGHT ||
-            blocks[blockX][blockY + 1][blockZ] == BlockType::AIR) {
+            m_Blocks[blockX][blockY + 1][blockZ] == BlockType::AIR) {
           x = blockX;
           y = blockY + 1;
           z = blockZ;
@@ -134,12 +102,12 @@ std::vector<float> Chunk::generateMeshData(
               color[2]  // top-left
           };
 
-          vertices.insert_range(vertices.end(), currentData);
+          m_Data.insert_range(m_Data.end(), currentData);
         }
 
         // Down
         if (blockY == 0 ||
-            blocks[blockX][blockY - 1][blockZ] == BlockType::AIR) {
+            m_Blocks[blockX][blockY - 1][blockZ] == BlockType::AIR) {
           x = chunkXToPosition + blockX;
           y = blockY;
           z = chunkZToPosition + blockZ;
@@ -162,12 +130,12 @@ std::vector<float> Chunk::generateMeshData(
               color[2]  // top-left
           };
 
-          vertices.insert_range(vertices.end(), currentData);
+          m_Data.insert_range(m_Data.end(), currentData);
         }
 
         // Front
         if (blockZ + 1 == Constants::Chunk::LENGTH ||
-            blocks[blockX][blockY][blockZ + 1] == BlockType::AIR) {
+            m_Blocks[blockX][blockY][blockZ + 1] == BlockType::AIR) {
           x = chunkXToPosition + blockX;
           y = blockY;
           z = chunkZToPosition + blockZ + 1;
@@ -191,12 +159,12 @@ std::vector<float> Chunk::generateMeshData(
               color[2]  // top-left
           };
 
-          vertices.insert_range(vertices.end(), currentData);
+          m_Data.insert_range(m_Data.end(), currentData);
         }
 
         // Back
         if (blockZ == 0 ||
-            blocks[blockX][blockY][blockZ - 1] == BlockType::AIR) {
+            m_Blocks[blockX][blockY][blockZ - 1] == BlockType::AIR) {
           x = chunkXToPosition + blockX;
           y = blockY;
           z = chunkZToPosition + blockZ;
@@ -220,12 +188,12 @@ std::vector<float> Chunk::generateMeshData(
               color[2]  // top-left
           };
 
-          vertices.insert_range(vertices.end(), currentData);
+          m_Data.insert_range(m_Data.end(), currentData);
         }
 
         // Left
         if (blockX == 0 ||
-            blocks[blockX - 1][blockY][blockZ] == BlockType::AIR) {
+            m_Blocks[blockX - 1][blockY][blockZ] == BlockType::AIR) {
           x = chunkXToPosition + blockX;
           y = blockY;
           z = chunkZToPosition + blockZ;
@@ -249,12 +217,12 @@ std::vector<float> Chunk::generateMeshData(
               color[2]  // top-left
           };
 
-          vertices.insert_range(vertices.end(), currentData);
+          m_Data.insert_range(m_Data.end(), currentData);
         }
 
         // Right
         if (blockX + 1 == Constants::Chunk::LENGTH ||
-            blocks[blockX + 1][blockY][blockZ] == BlockType::AIR) {
+            m_Blocks[blockX + 1][blockY][blockZ] == BlockType::AIR) {
           x = chunkXToPosition + blockX + 1;
           y = blockY;
           z = chunkZToPosition + blockZ;
@@ -278,13 +246,40 @@ std::vector<float> Chunk::generateMeshData(
               color[2]  // top-left
           };
 
-          vertices.insert_range(vertices.end(), currentData);
+          m_Data.insert_range(m_Data.end(), currentData);
         }
       }
     }
   }
+}
 
-  return vertices;
+void Chunk::pass() {
+  glGenVertexArrays(1, &m_VAO);
+  glGenBuffers(1, &m_VBO);
+
+  glBindVertexArray(m_VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+  glBufferData(GL_ARRAY_BUFFER, m_Data.size() * sizeof(float), m_Data.data(),
+               GL_STATIC_DRAW);
+
+  // Clean up the large vbo data once setup the chunk
+  m_VboSize = m_Data.size();
+  m_Data.clear();
+  m_Data.shrink_to_fit();
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)0);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
+                        (void *)(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
+
+  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
+                        (void *)(4 * sizeof(float)));
+  glEnableVertexAttribArray(2);
+
+  if (Constants::DO_TRIANGLE_LINE) {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  }
 }
 
 void Chunk::cleanup() {

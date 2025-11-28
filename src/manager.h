@@ -34,6 +34,6 @@ class ChunkManager {
   std::unordered_map<glm::vec2, Chunk> m_ProcessedChunks;
   std::unordered_set<glm::vec2> m_ProcessingPositions;
 
-  std::unordered_map<glm::vec2, std::future<std::vector<float>>>
+  std::unordered_map<glm::vec2, std::future<Chunk>>
       m_ProcessingChunks;
 };

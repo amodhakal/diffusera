@@ -52,7 +52,7 @@ void ChunkManager::render(const Camera* camera, Shader& shader) {
 
   for (auto it = m_ProcessingChunks.begin(); it != m_ProcessingChunks.end();) {
     const glm::vec2 position = it->first;
-    std::future<std::vector<float>>& worker = it->second;
+    std::future<Chunk>& worker = it->second;
 
     if (worker.wait_for(std::chrono::milliseconds(0)) !=
         std::future_status::ready) {
@@ -62,8 +62,8 @@ void ChunkManager::render(const Camera* camera, Shader& shader) {
     }
 
     // Get the mesh data and process it (gl requires main thread)
-    std::vector<float> meshData = worker.get();
-    Chunk chunk(meshData);
+    Chunk chunk = worker.get();
+    chunk.pass();
 
     // Remove from processing, add to processed
     m_ProcessingPositions.erase(position);
@@ -117,7 +117,9 @@ void ChunkManager::render(const Camera* camera, Shader& shader) {
       FastNoiseLite& noiseCopy = m_NoiseGenerator;
       m_ProcessingChunks[position] =
           std::async(std::launch::async, [position, noiseCopy]() mutable {
-            return Chunk::generateMeshData(position, noiseCopy);
+            Chunk chunk;
+            chunk.generateMeshData(position, noiseCopy);
+            return chunk;
           });
     }
   }
