@@ -81,6 +81,10 @@ void Application::update() {
   if (err != GL_NO_ERROR) {
     std::println("OpenGL Error: {}", err);
   }
+
+  // TODO Get the topmost section from the chunk manager
+  // TODO Prevent multiple jumping
+  m_Player.update(deltaTime, 100);
 }
 
 float Application::getDeltaTime() {
@@ -116,7 +120,7 @@ void Application::handleKeyPress(float deltaTime) {
     return;
   }
 
-  m_Player.getCamera()->processKeyInput(m_Window, deltaTime);
+  m_Player.processKeyInput(m_Window, deltaTime);
 }
 
 void Application::handleResizeCallback(GLFWwindow* window, int width,
@@ -135,3 +139,5 @@ void Application::handleScrollCallback(GLFWwindow* window, double xOffset,
   auto* context = static_cast<Application*>(glfwGetWindowUserPointer(window));
   context->processScrollInput(xOffset, yOffset);
 }
+
+

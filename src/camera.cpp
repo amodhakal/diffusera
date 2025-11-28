@@ -56,29 +56,6 @@ void Camera::processScrollInput(double xOffset, double yOffset) {
   m_Fov = fmin(m_Fov, Constants::Camera::FOV_MAX);
 }
 
-void Camera::processKeyInput(GLFWwindow* window, float deltaTime) {
-  float cameraSpeed = Constants::Camera::SPEED * deltaTime;
-
-  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-    m_Position += cameraSpeed * m_Front;
-  }
-  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-    m_Position -= cameraSpeed * m_Front;
-  }
-  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-    m_Position -= glm::normalize(glm::cross(m_Front, m_Up)) * cameraSpeed;
-  }
-  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-    m_Position += glm::normalize(glm::cross(m_Front, m_Up)) * cameraSpeed;
-  }
-  if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-    m_Position[1] += cameraSpeed;
-  }
-  if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-    m_Position[1] -= cameraSpeed;
-  }
-}
-
 glm::mat4 Camera::getView() {
   return glm::lookAt(m_Position, m_Position + m_Front, m_Up);
 }

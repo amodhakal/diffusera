@@ -4,7 +4,6 @@
 
 #include <print>
 
-#include "camera.h"
 #include "config.h"
 #include "manager.h"
 #include "player.h"
@@ -19,7 +18,6 @@ class Application {
 
   bool isRunning();
   void update();
-
 
  private:
   GLFWwindow* m_Window;
