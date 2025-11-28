@@ -1,4 +1,7 @@
 #pragma once
+#define GL_SILENCE_DEPRECATION
+#include <glad/glad.h>
+#include <glfw/glfw3.h>
 #include <sys/types.h>
 
 #include <glm/glm.hpp>
@@ -15,7 +18,7 @@ constexpr uint SCR_HEIGHT = 600;
 constexpr auto BG_COLOR = glm::vec4(0.1, 0.1, 0.1, 1.0);
 
 constexpr bool DO_TRIANGLE_LINE = false;
-constexpr bool DO_GRAVITY = false;
+constexpr bool DO_GRAVITY = true;
 
 namespace Camera {
 constexpr float JUMP_VELOCTY = 15.0;

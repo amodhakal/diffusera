@@ -5,7 +5,6 @@
 #include <future>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
 
 #include "camera.h"
 #include "chunk.h"
@@ -29,11 +28,12 @@ class ChunkManager {
   void load();
   void render(const Camera* camera, Shader& shader);
 
+  float getPositionHighestY(const glm::vec3& cameraPosition);
+
  private:
   FastNoiseLite m_NoiseGenerator;
   std::unordered_map<glm::vec2, Chunk> m_ProcessedChunks;
   std::unordered_set<glm::vec2> m_ProcessingPositions;
 
-  std::unordered_map<glm::vec2, std::future<Chunk>>
-      m_ProcessingChunks;
+  std::unordered_map<glm::vec2, std::future<Chunk>> m_ProcessingChunks;
 };

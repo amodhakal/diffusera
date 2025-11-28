@@ -1,7 +1,5 @@
-#define GL_SILENCE_DEPRECATION
+#include "config.h"
 #include "shader.h"
-
-#include <glad/glad.h>
 
 #include <glm/gtc/type_ptr.hpp>
 #include <string>

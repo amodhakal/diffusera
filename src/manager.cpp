@@ -8,7 +8,6 @@
 #include <glm/glm.hpp>
 
 #include "chunk.h"
-#include "config.h"
 
 ChunkManager::ChunkManager() {
   float seed = std::rand();
@@ -145,4 +144,9 @@ void ChunkManager::render(const Camera* camera, Shader& shader) {
 
     chunk.render();
   }
+}
+
+float ChunkManager::getPositionHighestY(const glm::vec3& cameraPosition) {
+  // TODO: Implement this
+  return 100.0;
 }

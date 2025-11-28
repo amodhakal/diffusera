@@ -1,5 +1,4 @@
 #pragma once
-
 #include <sys/types.h>
 
 #include <vector>
@@ -26,7 +25,7 @@ class Chunk {
   void generateMeshData(const glm::vec2& position,
                         const FastNoiseLite& noiseGenerator);
 
-    void pass();
+  void pass();
   void render();
   void cleanup();
 

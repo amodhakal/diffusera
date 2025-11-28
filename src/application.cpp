@@ -1,10 +1,11 @@
-#define GL_SILENCE_DEPRECATION
 #include "application.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <print>
 #include <string>
 
+#include "config.h"
+#include "player.h"
 #include "shader.h"
 
 Application::Application(const char* title, const uint width, const uint height,
@@ -82,7 +83,8 @@ void Application::update() {
     std::println("OpenGL Error: {}", err);
   }
 
-  // TODO Get the topmost section from the chunk manager
+  glm::vec3 cameraPosition = m_Player.getCamera()->m_Position;
+  float highestY = m_ChunkManager.getPositionHighestY(cameraPosition);
   m_Player.update(deltaTime, 100);
 }
 

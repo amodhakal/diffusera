@@ -1,6 +1,5 @@
 #include "chunk.h"
 
-#include <glad/glad.h>
 #include <noise/noise.h>
 
 #include <cassert>

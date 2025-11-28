@@ -1,9 +1,6 @@
 #pragma once
 
-#include <glad/glad.h>
-
 #include <print>
-
 #include "config.h"
 #include "manager.h"
 #include "player.h"
