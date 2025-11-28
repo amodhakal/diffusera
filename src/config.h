@@ -18,8 +18,9 @@ constexpr bool DO_TRIANGLE_LINE = false;
 constexpr bool DO_GRAVITY = false;
 
 namespace Camera {
-constexpr float JUMP_VELOCTY = 5.0;
-constexpr float ACCELERATION = 9.8;
+constexpr float JUMP_VELOCTY = 15.0;
+constexpr float ACCELERATION = 50.0;
+constexpr float MAX_VELOCITY = 20.0;
 constexpr float SPEED = 20.5;
 constexpr float SENSITIVITY = 0.2;
 constexpr float NEAR = 0.1;
@@ -34,7 +35,7 @@ constexpr float PITCH_MIN = -89.0;
 constexpr float FOV_MIN = 1.0;
 constexpr float FOV_MAX = 45.0;
 
-constexpr glm::vec3 DEFAULT_POSITION = {5, 105, 5};
+constexpr glm::vec3 DEFAULT_POSITION = {5, 155, 5};
 constexpr glm::vec3 DEFAULT_FRONT = {0, 0, -1};
 constexpr glm::vec3 DEFAULT_UP = {0, 1, 0};
 }  // namespace Camera

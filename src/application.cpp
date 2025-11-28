@@ -83,7 +83,6 @@ void Application::update() {
   }
 
   // TODO Get the topmost section from the chunk manager
-  // TODO Prevent multiple jumping
   m_Player.update(deltaTime, 100);
 }
 
@@ -107,11 +106,12 @@ float Application::getDeltaTime() {
 }
 
 void Application::processMouseInput(double xPosition, double yPosition) {
-  return m_Player.getCamera()->processMouseInput(xPosition, yPosition);
+  return m_Player.processMouseInput(xPosition, yPosition);
 }
 
 void Application::processScrollInput(double xOffset, double yOffset) {
-  return m_Player.getCamera()->processScrollInput(xOffset, yOffset);
+  // TODO No fov change here
+  // return m_Player.getCamera()->processScrollInput(xOffset, yOffset);
 }
 
 void Application::handleKeyPress(float deltaTime) {
@@ -139,5 +139,3 @@ void Application::handleScrollCallback(GLFWwindow* window, double xOffset,
   auto* context = static_cast<Application*>(glfwGetWindowUserPointer(window));
   context->processScrollInput(xOffset, yOffset);
 }
-
-

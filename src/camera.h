@@ -19,8 +19,6 @@ struct Camera {
   bool m_IsFirstMouse;
 
   Camera(glm::vec3 position);
-  void processMouseInput(double xPosition, double yPosition);
-  void processScrollInput(double xOffset, double yOffset);
 
   glm::mat4 getView();
   glm::mat4 getProjection();
