@@ -50,12 +50,14 @@ void Chunk::generateMeshData(const glm::vec2 &position,
   int chunkXToPosition = 0;
   int chunkZToPosition = 0;
 
+  m_Data.clear();
+  m_Indices.clear();
+
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockY = 0; blockY < Constants::Chunk::HEIGHT; blockY++) {
       for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
         BlockType current = m_Blocks[blockX][blockY][blockZ];
         glm::vec3 color;
-
         switch (current) {
           case BlockType::AIR:
             continue;
@@ -70,183 +72,324 @@ void Chunk::generateMeshData(const glm::vec2 &position,
                                      std::to_string(current));
         }
 
-        // Air has no mesh
-        if (current == BlockType::AIR) {
-          continue;
-        }
-
-        std::vector<float> currentData;
         float x, y, z;
-
         // Top
         if (blockY + 1 == Constants::Chunk::HEIGHT ||
             m_Blocks[blockX][blockY + 1][blockZ] == BlockType::AIR) {
           x = blockX;
           y = blockY + 1;
           z = blockZ;
-          currentData = {
-              // First triangle
-              x, y, z, BlockNormal::TOP_NORMAL, color[0], color[1],
-              color[2],  // bottom-left
-              x + 1, y, z, BlockNormal::TOP_NORMAL, color[0], color[1],
-              color[2],  // bottom-right
-              x, y, z + 1, BlockNormal::TOP_NORMAL, color[0], color[1],
-              color[2],  // top-left
-
-              // Second triangle
-              x + 1, y, z, BlockNormal::TOP_NORMAL, color[0], color[1],
-              color[2],  // bottom-right
-              x + 1, y, z + 1, BlockNormal::TOP_NORMAL, color[0], color[1],
-              color[2],  // top-right
-              x, y, z + 1, BlockNormal::TOP_NORMAL, color[0], color[1],
-              color[2]  // top-left
-          };
-
-          m_Data.insert_range(m_Data.end(), currentData);
+          size_t idx = m_Data.size() / 7;
+          m_Data.insert(m_Data.end(), {x,
+                                       y,
+                                       z,
+                                       BlockNormal::TOP_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x + 1,
+                                       y,
+                                       z,
+                                       BlockNormal::TOP_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y,
+                                       z + 1,
+                                       BlockNormal::TOP_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x + 1,
+                                       y,
+                                       z,
+                                       BlockNormal::TOP_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x + 1,
+                                       y,
+                                       z + 1,
+                                       BlockNormal::TOP_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y,
+                                       z + 1,
+                                       BlockNormal::TOP_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2]});
+          m_Indices.insert(m_Indices.end(),
+                           {(uint)idx, (uint)idx + 1, (uint)idx + 2,
+                            (uint)idx + 3, (uint)idx + 4, (uint)idx + 5});
         }
-
-        // Down
+        // Bottom
         if (blockY == 0 ||
             m_Blocks[blockX][blockY - 1][blockZ] == BlockType::AIR) {
           x = chunkXToPosition + blockX;
           y = blockY;
           z = chunkZToPosition + blockZ;
-
-          currentData = {
-              // First triangle
-              x, y, z, BlockNormal::BOTTOM_NORMAL, color[0], color[1],
-              color[2],  // bottom-left
-              x + 1, y, z, BlockNormal::BOTTOM_NORMAL, color[0], color[1],
-              color[2],  // bottom-right
-              x, y, z + 1, BlockNormal::BOTTOM_NORMAL, color[0], color[1],
-              color[2],  // top-left
-
-              // Second triangle
-              x + 1, y, z, BlockNormal::BOTTOM_NORMAL, color[0], color[1],
-              color[2],  // bottom-right
-              x + 1, y, z + 1, BlockNormal::BOTTOM_NORMAL, color[0], color[1],
-              color[2],  // top-right
-              x, y, z + 1, BlockNormal::BOTTOM_NORMAL, color[0], color[1],
-              color[2]  // top-left
-          };
-
-          m_Data.insert_range(m_Data.end(), currentData);
+          size_t idx = m_Data.size() / 7;
+          m_Data.insert(m_Data.end(), {x,
+                                       y,
+                                       z,
+                                       BlockNormal::BOTTOM_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x + 1,
+                                       y,
+                                       z,
+                                       BlockNormal::BOTTOM_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y,
+                                       z + 1,
+                                       BlockNormal::BOTTOM_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x + 1,
+                                       y,
+                                       z,
+                                       BlockNormal::BOTTOM_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x + 1,
+                                       y,
+                                       z + 1,
+                                       BlockNormal::BOTTOM_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y,
+                                       z + 1,
+                                       BlockNormal::BOTTOM_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2]});
+          m_Indices.insert(m_Indices.end(),
+                           {(uint)idx, (uint)idx + 1, (uint)idx + 2,
+                            (uint)idx + 3, (uint)idx + 4, (uint)idx + 5});
         }
-
         // Front
         if (blockZ + 1 == Constants::Chunk::LENGTH ||
             m_Blocks[blockX][blockY][blockZ + 1] == BlockType::AIR) {
           x = chunkXToPosition + blockX;
           y = blockY;
           z = chunkZToPosition + blockZ + 1;
-
-          currentData = {
-              // First triangle
-              x, y, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
-              color[2],  // bottom-left
-              x + 1, y, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
-              color[2],  // bottom-right
-              x, y + 1, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
-              color[2],  // top-left
-
-              // Second triangle
-              x + 1, y, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
-              color[2],  // bottom-right
-              x + 1, y + 1, z, BlockNormal::FRONT_BACK_NORMAL, color[0],
-              color[1],
-              color[2],  // top-right
-              x, y + 1, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
-              color[2]  // top-left
-          };
-
-          m_Data.insert_range(m_Data.end(), currentData);
+          size_t idx = m_Data.size() / 7;
+          m_Data.insert(m_Data.end(), {x,
+                                       y,
+                                       z,
+                                       BlockNormal::FRONT_BACK_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x + 1,
+                                       y,
+                                       z,
+                                       BlockNormal::FRONT_BACK_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y + 1,
+                                       z,
+                                       BlockNormal::FRONT_BACK_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x + 1,
+                                       y,
+                                       z,
+                                       BlockNormal::FRONT_BACK_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x + 1,
+                                       y + 1,
+                                       z,
+                                       BlockNormal::FRONT_BACK_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y + 1,
+                                       z,
+                                       BlockNormal::FRONT_BACK_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2]});
+          m_Indices.insert(m_Indices.end(),
+                           {(uint)idx, (uint)idx + 1, (uint)idx + 2,
+                            (uint)idx + 3, (uint)idx + 4, (uint)idx + 5});
         }
-
         // Back
         if (blockZ == 0 ||
             m_Blocks[blockX][blockY][blockZ - 1] == BlockType::AIR) {
           x = chunkXToPosition + blockX;
           y = blockY;
           z = chunkZToPosition + blockZ;
-
-          currentData = {
-              // First triangle
-              x, y, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
-              color[2],  // bottom-left
-              x + 1, y, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
-              color[2],  // bottom-right
-              x, y + 1, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
-              color[2],  // top-left
-
-              // Second triangle
-              x + 1, y, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
-              color[2],  // bottom-right
-              x + 1, y + 1, z, BlockNormal::FRONT_BACK_NORMAL, color[0],
-              color[1],
-              color[2],  // top-right
-              x, y + 1, z, BlockNormal::FRONT_BACK_NORMAL, color[0], color[1],
-              color[2]  // top-left
-          };
-
-          m_Data.insert_range(m_Data.end(), currentData);
+          size_t idx = m_Data.size() / 7;
+          m_Data.insert(m_Data.end(), {x,
+                                       y,
+                                       z,
+                                       BlockNormal::FRONT_BACK_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x + 1,
+                                       y,
+                                       z,
+                                       BlockNormal::FRONT_BACK_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y + 1,
+                                       z,
+                                       BlockNormal::FRONT_BACK_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x + 1,
+                                       y,
+                                       z,
+                                       BlockNormal::FRONT_BACK_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x + 1,
+                                       y + 1,
+                                       z,
+                                       BlockNormal::FRONT_BACK_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y + 1,
+                                       z,
+                                       BlockNormal::FRONT_BACK_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2]});
+          m_Indices.insert(m_Indices.end(),
+                           {(uint)idx, (uint)idx + 1, (uint)idx + 2,
+                            (uint)idx + 3, (uint)idx + 4, (uint)idx + 5});
         }
-
         // Left
         if (blockX == 0 ||
             m_Blocks[blockX - 1][blockY][blockZ] == BlockType::AIR) {
           x = chunkXToPosition + blockX;
           y = blockY;
           z = chunkZToPosition + blockZ;
-
-          currentData = {
-              // First triangle
-              x, y, z, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
-              color[2],  // bottom-left
-              x, y, z + 1, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
-              color[2],  // bottom-right
-              x, y + 1, z, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
-              color[2],  // top-left
-
-              // Second triangle
-              x, y, z + 1, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
-              color[2],  // bottom-right
-              x, y + 1, z + 1, BlockNormal::RIGHT_LEFT_NORMAL, color[0],
-              color[1],
-              color[2],  // top-right
-              x, y + 1, z, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
-              color[2]  // top-left
-          };
-
-          m_Data.insert_range(m_Data.end(), currentData);
+          size_t idx = m_Data.size() / 7;
+          m_Data.insert(m_Data.end(), {x,
+                                       y,
+                                       z,
+                                       BlockNormal::RIGHT_LEFT_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y,
+                                       z + 1,
+                                       BlockNormal::RIGHT_LEFT_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y + 1,
+                                       z,
+                                       BlockNormal::RIGHT_LEFT_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y,
+                                       z + 1,
+                                       BlockNormal::RIGHT_LEFT_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y + 1,
+                                       z + 1,
+                                       BlockNormal::RIGHT_LEFT_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y + 1,
+                                       z,
+                                       BlockNormal::RIGHT_LEFT_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2]});
+          m_Indices.insert(m_Indices.end(),
+                           {(uint)idx, (uint)idx + 1, (uint)idx + 2,
+                            (uint)idx + 3, (uint)idx + 4, (uint)idx + 5});
         }
-
         // Right
         if (blockX + 1 == Constants::Chunk::LENGTH ||
             m_Blocks[blockX + 1][blockY][blockZ] == BlockType::AIR) {
           x = chunkXToPosition + blockX + 1;
           y = blockY;
           z = chunkZToPosition + blockZ;
-
-          currentData = {
-              // First triangle
-              x, y, z, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
-              color[2],  // bottom-left
-              x, y, z + 1, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
-              color[2],  // bottom-right
-              x, y + 1, z, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
-              color[2],  // top-left
-
-              // Second triangle
-              x, y, z + 1, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
-              color[2],  // bottom-right
-              x, y + 1, z + 1, BlockNormal::RIGHT_LEFT_NORMAL, color[0],
-              color[1],
-              color[2],  // top-right
-              x, y + 1, z, BlockNormal::RIGHT_LEFT_NORMAL, color[0], color[1],
-              color[2]  // top-left
-          };
-
-          m_Data.insert_range(m_Data.end(), currentData);
+          size_t idx = m_Data.size() / 7;
+          m_Data.insert(m_Data.end(), {x,
+                                       y,
+                                       z,
+                                       BlockNormal::RIGHT_LEFT_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y,
+                                       z + 1,
+                                       BlockNormal::RIGHT_LEFT_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y + 1,
+                                       z,
+                                       BlockNormal::RIGHT_LEFT_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y,
+                                       z + 1,
+                                       BlockNormal::RIGHT_LEFT_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y + 1,
+                                       z + 1,
+                                       BlockNormal::RIGHT_LEFT_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2],
+                                       x,
+                                       y + 1,
+                                       z,
+                                       BlockNormal::RIGHT_LEFT_NORMAL,
+                                       color[0],
+                                       color[1],
+                                       color[2]});
+          m_Indices.insert(m_Indices.end(),
+                           {(uint)idx, (uint)idx + 1, (uint)idx + 2,
+                            (uint)idx + 3, (uint)idx + 4, (uint)idx + 5});
         }
       }
     }
@@ -256,13 +399,18 @@ void Chunk::generateMeshData(const glm::vec2 &position,
 void Chunk::pass() {
   glGenVertexArrays(1, &m_VAO);
   glGenBuffers(1, &m_VBO);
+  glGenBuffers(1, &m_EBO);
 
   glBindVertexArray(m_VAO);
+
   glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
   glBufferData(GL_ARRAY_BUFFER, m_Data.size() * sizeof(float), m_Data.data(),
                GL_STATIC_DRAW);
 
-  // Clean up the large vbo data once setup the chunk
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_Indices.size() * sizeof(uint),
+               m_Indices.data(), GL_STATIC_DRAW);
+
   m_VboSize = m_Data.size();
   m_Data.clear();
   m_Data.shrink_to_fit();
@@ -284,13 +432,14 @@ void Chunk::pass() {
 
 void Chunk::cleanup() {
   glDeleteBuffers(1, &m_VBO);
+  glDeleteBuffers(1, &m_EBO);
   glDeleteVertexArrays(1, &m_VAO);
 }
 
 void Chunk::render() {
   glBindVertexArray(m_VAO);
-  // Each vertex has 7 floats (position.xyz + normal + color.rgb).
-  glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_VboSize / 7));
+  glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_Indices.size()),
+                 GL_UNSIGNED_INT, 0);
 }
 
 uint Chunk::getHighestBlockY(uint blockX, uint blockZ) {

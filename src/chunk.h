@@ -33,10 +33,12 @@ class Chunk {
  private:
   uint m_VAO;
   uint m_VBO;
+  uint m_EBO; 
   uint m_VboSize;
 
   BlockStore m_Blocks;
   std::vector<float> m_Data;
+  std::vector<uint> m_Indices;
 
   uint m_HeightMap[Constants::Chunk::LENGTH][Constants::Chunk::LENGTH];
 };
