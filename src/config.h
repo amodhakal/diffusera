@@ -18,7 +18,7 @@ constexpr uint SCR_HEIGHT = 600;
 constexpr auto BG_COLOR = glm::vec4(0.1, 0.1, 0.1, 1.0);
 
 constexpr bool DO_TRIANGLE_LINE = false;
-constexpr bool DO_GRAVITY = true;
+constexpr bool DO_GRAVITY = false;
 
 namespace Camera {
 constexpr float JUMP_VELOCTY = 15.0;

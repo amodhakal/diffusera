@@ -2,15 +2,16 @@
 
 #include <sys/types.h>
 
+#include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <future>
-#include <algorithm>
 #include <glm/glm.hpp>
 
+#include "Frustum.h"
 #include "chunk.h"
 #include "config.h"
 
@@ -129,11 +130,12 @@ void ChunkManager::render(const Camera* camera, Shader& shader) {
   }
 
   shader.use();
+  Frustum frustum(camera);
 
   for (auto& value : m_ProcessedChunks) {
     const glm::vec2& position = value.first;
 
-    if (!camera->isChunkInside(position)) {
+    if (!frustum.isChunkInside(position)) {
       continue;
     }
 
@@ -162,7 +164,8 @@ float ChunkManager::getPositionHighestY(const glm::vec3& cameraPosition) {
 
   glm::vec2 chunkPosition = {chunkX, chunkZ};
 
-  // Compute integer world block coords (floor) and convert to local chunk indices
+  // Compute integer world block coords (floor) and convert to local chunk
+  // indices
   int worldX = static_cast<int>(std::floor(cameraPosition.x));
   int worldZ = static_cast<int>(std::floor(cameraPosition.z));
 
@@ -170,14 +173,15 @@ float ChunkManager::getPositionHighestY(const glm::vec3& cameraPosition) {
   int localZ = worldZ - (chunkZ * static_cast<int>(Constants::Chunk::LENGTH));
 
   // Ensure local indices are inside [0, LENGTH-1]
-  localX = std::clamp(localX, 0, static_cast<int>(Constants::Chunk::LENGTH - 1));
-  localZ = std::clamp(localZ, 0, static_cast<int>(Constants::Chunk::LENGTH - 1));
+  localX =
+      std::clamp(localX, 0, static_cast<int>(Constants::Chunk::LENGTH - 1));
+  localZ =
+      std::clamp(localZ, 0, static_cast<int>(Constants::Chunk::LENGTH - 1));
 
   if (m_ProcessedChunks.contains(chunkPosition)) {
     Chunk& chunk = m_ProcessedChunks[chunkPosition];
-    return static_cast<float>(
-        chunk.getHighestBlockY(static_cast<uint>(localX),
-                               static_cast<uint>(localZ)));
+    return static_cast<float>(chunk.getHighestBlockY(
+        static_cast<uint>(localX), static_cast<uint>(localZ)));
   }
 
   return static_cast<float>(Constants::Chunk::HEIGHT);
