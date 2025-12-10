@@ -11,7 +11,7 @@
 #include <future>
 #include <glm/glm.hpp>
 
-#include "Frustum.h"
+#include "frustum.h"
 #include "chunk.h"
 #include "config.h"
 
