@@ -12,39 +12,28 @@ This project is an ongoing exploration into building a voxel engine from scratch
 
 Linterra is a from-scratch, Minecraft-style voxel engine written in modern C++ and OpenGL. The goal isn't cloning gameplay — it's understanding and building the hard technical pieces: procedural generation, chunked world systems, GPU-efficient meshing, and real-time rendering architecture.
 
-[Textures were received from Faithful 64x pack](https://faithfulpack.net/)
-
-![linterra-demo](/docs/milestone2.gif)
+![linterra-demo](/docs/milestone3.gif)
 
 ## Implemented Features
 
-### Milestone 1 — Engine Foundations
+### Milestone 3 — Textures & Performance
 
-The initial milestone focused on building the foundation required for an infinite voxel world.
+This milestone added textures, basic gravity and collision, and drastically improve performance.
 
-**Dynamic Chunk Management**
+**Perf Improvement**
 
-- A `ChunkManager` loads and unloads chunks based on camera position
-- Chunks stored in an `std::unordered_map` keyed by a custom `glm::vec2` hash
-- Fixed render distance; out-of-range chunks are pruned each frame
-- Supports a theoretically infinite world while keeping memory bounded
+- Added Element Buffers for each face
+- Added greedy meshing to reduce triangle count
+- Overall, with 24 chunks, speed: 54 fps -> **120 fps** and memory: 1.6 GB -> **0.3MB**
 
-**First-Person Camera**
+**Textures**
 
-- Standard fly-through camera with yaw/pitch mouse-look
-- WASD + Space/Shift movement
-- Adjustable speed, sensitivity, and FOV
+- Added two basic textures for the landscape
 
-**Modern Shader Abstraction**
+**Gravity && Collisions**
 
-- A `Shader` class handles reading, compiling, linking shader programs
-- Uniform location caching to reduce driver calls
-
-**Basic Rendering Pipeline**
-
-- Window and input via GLFW
-- OpenGL loading via GLAD
-- Core render loop with event dispatching and input callbacks
+- Added gravity option where user will fall down to the Earth
+- Added ground collisions such that the user can stand on the landscapce
 
 ### Milestone 2 — World Rendering & Performance
 
@@ -88,6 +77,34 @@ This milestone added actual voxel content, terrain generation, rendering efficie
 - Better visibility for shader compilation errors
 - Validation for shader program linking
 - Basic logging hooks added in critical paths
+
+### Milestone 1 — Engine Foundations
+
+The initial milestone focused on building the foundation required for an infinite voxel world.
+
+**Dynamic Chunk Management**
+
+- A `ChunkManager` loads and unloads chunks based on camera position
+- Chunks stored in an `std::unordered_map` keyed by a custom `glm::vec2` hash
+- Fixed render distance; out-of-range chunks are pruned each frame
+- Supports a theoretically infinite world while keeping memory bounded
+
+**First-Person Camera**
+
+- Standard fly-through camera with yaw/pitch mouse-look
+- WASD + Space/Shift movement
+- Adjustable speed, sensitivity, and FOV
+
+**Modern Shader Abstraction**
+
+- A `Shader` class handles reading, compiling, linking shader programs
+- Uniform location caching to reduce driver calls
+
+**Basic Rendering Pipeline**
+
+- Window and input via GLFW
+- OpenGL loading via GLAD
+- Core render loop with event dispatching and input callbacks
 
 ---
 
