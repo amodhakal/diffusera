@@ -130,4 +130,5 @@ inline void Player::processMouseInput(double xPosition, double yPosition) {
       sin(glm::radians(m_Camera.m_Yaw)) * cos(glm::radians(m_Camera.m_Pitch));
 
   m_Camera.m_Front = glm::normalize(front);
+
 }

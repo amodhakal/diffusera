@@ -1,10 +1,12 @@
 #pragma once
 
 #include <print>
+
 #include "config.h"
 #include "manager.h"
 #include "player.h"
 #include "shader.h"
+#include "texture.h"
 
 class Application {
  public:
@@ -21,6 +23,7 @@ class Application {
   Shader m_Shader;
   ChunkManager m_ChunkManager;
   Player m_Player;
+  Texture m_Textures[3];
 
   uint m_FpsAttempts;
   float m_CombinedDeltaTime;

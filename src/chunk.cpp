@@ -62,7 +62,6 @@ void Chunk::generateMeshData(const glm::vec2 &position,
   m_Data.clear();
   m_Indices.clear();
 
-
   const int dims[3] = {static_cast<int>(BX), static_cast<int>(BY),
                        static_cast<int>(BZ)};
 
@@ -71,20 +70,23 @@ void Chunk::generateMeshData(const glm::vec2 &position,
            static_cast<size_t>(z);
   };
 
-  auto blockColor = [&](BlockType t) -> glm::vec3 {
+  // Map (block type, face normal) -> texture unit id
+  auto blockTextureId = [&](BlockType t, BlockNormal n) -> int {
     switch (t) {
       case BlockType::GRASS:
-        return {0.0f, 0.6f, 0.1f};
+        if (n == BlockNormal::TOP_NORMAL) return 0;     // grass_top
+        if (n == BlockNormal::BOTTOM_NORMAL) return 2;  // dirt underside
+        return 1;                                       // grass_side
       case BlockType::DIRT:
-        return {0.6f, 0.2f, 0.2f};
+        return 2;  // dirt
       default:
-        return {0.0f, 0.0f, 0.0f};
+        return 2;
     }
   };
 
   auto addQuad = [&](const glm::ivec3 &a, const glm::ivec3 &du,
-                     const glm::ivec3 &dv, BlockNormal normalId,
-                     const glm::vec3 &color) {
+                     const glm::ivec3 &dv, BlockNormal normalId, int texId,
+                     bool flipV) {
     glm::vec3 p0 = glm::vec3(static_cast<float>(a.x), static_cast<float>(a.y),
                              static_cast<float>(a.z));
     glm::vec3 p1 = glm::vec3(static_cast<float>(a.x + du.x),
@@ -99,20 +101,36 @@ void Chunk::generateMeshData(const glm::vec2 &position,
 
     size_t base = m_Data.size() / 7;
 
-    auto pushVertex = [&](const glm::vec3 &p) {
+    auto pushVertex = [&](const glm::vec3 &p, const glm::vec2 &uv) {
       m_Data.push_back(p.x);
       m_Data.push_back(p.y);
       m_Data.push_back(p.z);
       m_Data.push_back(static_cast<float>(normalId));
-      m_Data.push_back(color.r);
-      m_Data.push_back(color.g);
-      m_Data.push_back(color.b);
+      m_Data.push_back(static_cast<float>(texId));
+      m_Data.push_back(uv.x);
+      m_Data.push_back(uv.y);
     };
 
-    pushVertex(p0);
-    pushVertex(p1);
-    pushVertex(p2);
-    pushVertex(p3);
+    float width =
+        static_cast<float>(std::abs(du.x) + std::abs(du.y) + std::abs(du.z));
+    float height =
+        static_cast<float>(std::abs(dv.x) + std::abs(dv.y) + std::abs(dv.z));
+
+    if (!flipV) {
+      pushVertex(p0, glm::vec2(0.0f, 0.0f));
+      pushVertex(p1, glm::vec2(width, 0.0f));
+      pushVertex(p2, glm::vec2(0.0f, height));
+      pushVertex(p3, glm::vec2(width, height));
+    } else {
+      // Flip the V coordinate so the texture's vertical orientation aligns with
+      // the world (useful for faces where the quad is generated in the
+      // negative direction). This keeps the grass strip at the top of side
+      // textures.
+      pushVertex(p0, glm::vec2(0.0f, height));
+      pushVertex(p1, glm::vec2(width, height));
+      pushVertex(p2, glm::vec2(0.0f, 0.0f));
+      pushVertex(p3, glm::vec2(width, 0.0f));
+    }
 
     m_Indices.push_back(static_cast<uint>(base + 0));
     m_Indices.push_back(static_cast<uint>(base + 2));
@@ -212,15 +230,19 @@ void Chunk::generateMeshData(const glm::vec2 &position,
               normalId = BlockNormal::RIGHT_LEFT_NORMAL;
             } else if (d == 1) {
               normalId = (dir == 1) ? BlockNormal::TOP_NORMAL
-                                     : BlockNormal::BOTTOM_NORMAL;
+                                    : BlockNormal::BOTTOM_NORMAL;
             } else {
               normalId = BlockNormal::FRONT_BACK_NORMAL;
             }
 
             BlockType mat = static_cast<BlockType>(id - 1);
-            glm::vec3 color = blockColor(mat);
+            int texId = blockTextureId(mat, normalId);
 
-            addQuad(a3, du3, dv3, normalId, color);
+            // Only flip V for -Z faces (d==2 and dir==-1) so that the vertical
+            // orientation of side textures (grass_side) matches between the
+            // front/back faces. +Z faces are left unflipped.
+            bool flipV = (d == 2 && dir == -1);
+            addQuad(a3, du3, dv3, normalId, texId, flipV);
 
             for (int hj = 0; hj < height; ++hj) {
               for (int wi = 0; wi < width; ++wi) {

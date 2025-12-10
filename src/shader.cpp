@@ -68,3 +68,11 @@ void Shader::newUniform(const char* name) {
 void Shader::setUniformMat4(const char* name, const glm::mat4& values) {
   glUniformMatrix4fv(m_Uniforms[name], 1, GL_FALSE, glm::value_ptr(values));
 }
+
+void Shader::setUniformInt(const char* name, int value) {
+  glUniform1i(m_Uniforms[name], value);
+}
+
+void Shader::setUniformIntArray(const char* name, const int* values, int count) {
+  glUniform1iv(m_Uniforms[name], count, values);
+}
