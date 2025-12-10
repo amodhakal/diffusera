@@ -11,8 +11,6 @@
 
 void Chunk::generateMeshData(const glm::vec2 &position,
                              const FastNoiseLite &noiseGenerator) {
-  // Use a heap-allocated flat buffer for block storage so we don't keep a
-  // large fixed-size member inside each Chunk instance after generation.
   const size_t BX = Constants::Chunk::LENGTH;
   const size_t BY = Constants::Chunk::HEIGHT;
   const size_t BZ = Constants::Chunk::LENGTH;
@@ -61,353 +59,177 @@ void Chunk::generateMeshData(const glm::vec2 &position,
 
   int chunkXToPosition = 0;
   int chunkZToPosition = 0;
-
   m_Data.clear();
   m_Indices.clear();
 
-  for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
-    for (uint blockY = 0; blockY < Constants::Chunk::HEIGHT; blockY++) {
-      for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
-        BlockType current = blocks[blockIndex(blockX, blockY, blockZ)];
-        glm::vec3 color;
-        switch (current) {
-          case BlockType::AIR:
-            continue;
-          case BlockType::GRASS:
-            color = {0.0, 0.6, 0.1};
-            break;
-          case BlockType::DIRT:
-            color = {0.6, 0.2, 0.2};
-            break;
-          default:
-            throw std::runtime_error("Invalid type received: " +
-                                     std::to_string(current));
+
+  const int dims[3] = {static_cast<int>(BX), static_cast<int>(BY),
+                       static_cast<int>(BZ)};
+
+  auto idx3 = [&](int x, int y, int z) -> size_t {
+    return (static_cast<size_t>(x) * BY + static_cast<size_t>(y)) * BZ +
+           static_cast<size_t>(z);
+  };
+
+  auto blockColor = [&](BlockType t) -> glm::vec3 {
+    switch (t) {
+      case BlockType::GRASS:
+        return {0.0f, 0.6f, 0.1f};
+      case BlockType::DIRT:
+        return {0.6f, 0.2f, 0.2f};
+      default:
+        return {0.0f, 0.0f, 0.0f};
+    }
+  };
+
+  auto addQuad = [&](const glm::ivec3 &a, const glm::ivec3 &du,
+                     const glm::ivec3 &dv, BlockNormal normalId,
+                     const glm::vec3 &color) {
+    glm::vec3 p0 = glm::vec3(static_cast<float>(a.x), static_cast<float>(a.y),
+                             static_cast<float>(a.z));
+    glm::vec3 p1 = glm::vec3(static_cast<float>(a.x + du.x),
+                             static_cast<float>(a.y + du.y),
+                             static_cast<float>(a.z + du.z));
+    glm::vec3 p2 = glm::vec3(static_cast<float>(a.x + dv.x),
+                             static_cast<float>(a.y + dv.y),
+                             static_cast<float>(a.z + dv.z));
+    glm::vec3 p3 = glm::vec3(static_cast<float>(a.x + du.x + dv.x),
+                             static_cast<float>(a.y + du.y + dv.y),
+                             static_cast<float>(a.z + du.z + dv.z));
+
+    size_t base = m_Data.size() / 7;
+
+    auto pushVertex = [&](const glm::vec3 &p) {
+      m_Data.push_back(p.x);
+      m_Data.push_back(p.y);
+      m_Data.push_back(p.z);
+      m_Data.push_back(static_cast<float>(normalId));
+      m_Data.push_back(color.r);
+      m_Data.push_back(color.g);
+      m_Data.push_back(color.b);
+    };
+
+    pushVertex(p0);
+    pushVertex(p1);
+    pushVertex(p2);
+    pushVertex(p3);
+
+    m_Indices.push_back(static_cast<uint>(base + 0));
+    m_Indices.push_back(static_cast<uint>(base + 2));
+    m_Indices.push_back(static_cast<uint>(base + 1));
+    m_Indices.push_back(static_cast<uint>(base + 1));
+    m_Indices.push_back(static_cast<uint>(base + 2));
+    m_Indices.push_back(static_cast<uint>(base + 3));
+  };
+
+  for (int d = 0; d < 3; ++d) {
+    int u = (d + 1) % 3;
+    int v = (d + 2) % 3;
+
+    for (int dir = -1; dir <= 1; dir += 2) {
+      int dimU = dims[u];
+      int dimV = dims[v];
+      int dimD = dims[d];
+
+      std::vector<int> mask(dimU * dimV, 0);
+
+      for (int slice = 0; slice < dimD; ++slice) {
+        for (int iv = 0; iv < dimV; ++iv) {
+          for (int iu = 0; iu < dimU; ++iu) {
+            int coord[3];
+            coord[d] = slice;
+            coord[u] = iu;
+            coord[v] = iv;
+
+            int nx = coord[0];
+            int ny = coord[1];
+            int nz = coord[2];
+
+            int nn[3] = {nx, ny, nz};
+            nn[d] = coord[d] + dir;
+
+            BlockType a = BlockType::AIR;
+            BlockType b = BlockType::AIR;
+
+            if (coord[0] >= 0 && coord[0] < dims[0] && coord[1] >= 0 &&
+                coord[1] < dims[1] && coord[2] >= 0 && coord[2] < dims[2]) {
+              a = blocks[idx3(coord[0], coord[1], coord[2])];
+            }
+
+            if (nn[0] >= 0 && nn[0] < dims[0] && nn[1] >= 0 &&
+                nn[1] < dims[1] && nn[2] >= 0 && nn[2] < dims[2]) {
+              b = blocks[idx3(nn[0], nn[1], nn[2])];
+            }
+
+            int maskIndex = iv * dimU + iu;
+            if (a != BlockType::AIR && b == BlockType::AIR) {
+              mask[maskIndex] = static_cast<int>(a) + 1;
+            } else {
+              mask[maskIndex] = 0;
+            }
+          }
         }
 
-        float x, y, z;
-        // Top
-        if (blockY + 1 == Constants::Chunk::HEIGHT ||
-            blocks[blockIndex(blockX, blockY + 1, blockZ)] ==
-              BlockType::AIR) {
-          x = blockX;
-          y = blockY + 1;
-          z = blockZ;
-          size_t idx = m_Data.size() / 7;
-          m_Data.insert(m_Data.end(), {x,
-                                       y,
-                                       z,
-                                       BlockNormal::TOP_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x + 1,
-                                       y,
-                                       z,
-                                       BlockNormal::TOP_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y,
-                                       z + 1,
-                                       BlockNormal::TOP_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x + 1,
-                                       y,
-                                       z,
-                                       BlockNormal::TOP_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x + 1,
-                                       y,
-                                       z + 1,
-                                       BlockNormal::TOP_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y,
-                                       z + 1,
-                                       BlockNormal::TOP_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2]});
-          m_Indices.insert(m_Indices.end(),
-                           {(uint)idx, (uint)idx + 1, (uint)idx + 2,
-                            (uint)idx + 3, (uint)idx + 4, (uint)idx + 5});
-        }
-        // Bottom
-        if (blockY == 0 ||
-            blocks[blockIndex(blockX, blockY - 1, blockZ)] ==
-              BlockType::AIR) {
-          x = chunkXToPosition + blockX;
-          y = blockY;
-          z = chunkZToPosition + blockZ;
-          size_t idx = m_Data.size() / 7;
-          m_Data.insert(m_Data.end(), {x,
-                                       y,
-                                       z,
-                                       BlockNormal::BOTTOM_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x + 1,
-                                       y,
-                                       z,
-                                       BlockNormal::BOTTOM_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y,
-                                       z + 1,
-                                       BlockNormal::BOTTOM_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x + 1,
-                                       y,
-                                       z,
-                                       BlockNormal::BOTTOM_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x + 1,
-                                       y,
-                                       z + 1,
-                                       BlockNormal::BOTTOM_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y,
-                                       z + 1,
-                                       BlockNormal::BOTTOM_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2]});
-          m_Indices.insert(m_Indices.end(),
-                           {(uint)idx, (uint)idx + 1, (uint)idx + 2,
-                            (uint)idx + 3, (uint)idx + 4, (uint)idx + 5});
-        }
-        // Front
-        if (blockZ + 1 == Constants::Chunk::LENGTH ||
-            blocks[blockIndex(blockX, blockY, blockZ + 1)] ==
-              BlockType::AIR) {
-          x = chunkXToPosition + blockX;
-          y = blockY;
-          z = chunkZToPosition + blockZ + 1;
-          size_t idx = m_Data.size() / 7;
-          m_Data.insert(m_Data.end(), {x,
-                                       y,
-                                       z,
-                                       BlockNormal::FRONT_BACK_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x + 1,
-                                       y,
-                                       z,
-                                       BlockNormal::FRONT_BACK_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y + 1,
-                                       z,
-                                       BlockNormal::FRONT_BACK_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x + 1,
-                                       y,
-                                       z,
-                                       BlockNormal::FRONT_BACK_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x + 1,
-                                       y + 1,
-                                       z,
-                                       BlockNormal::FRONT_BACK_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y + 1,
-                                       z,
-                                       BlockNormal::FRONT_BACK_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2]});
-          m_Indices.insert(m_Indices.end(),
-                           {(uint)idx, (uint)idx + 1, (uint)idx + 2,
-                            (uint)idx + 3, (uint)idx + 4, (uint)idx + 5});
-        }
-        // Back
-        if (blockZ == 0 ||
-            blocks[blockIndex(blockX, blockY, blockZ - 1)] ==
-              BlockType::AIR) {
-          x = chunkXToPosition + blockX;
-          y = blockY;
-          z = chunkZToPosition + blockZ;
-          size_t idx = m_Data.size() / 7;
-          m_Data.insert(m_Data.end(), {x,
-                                       y,
-                                       z,
-                                       BlockNormal::FRONT_BACK_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x + 1,
-                                       y,
-                                       z,
-                                       BlockNormal::FRONT_BACK_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y + 1,
-                                       z,
-                                       BlockNormal::FRONT_BACK_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x + 1,
-                                       y,
-                                       z,
-                                       BlockNormal::FRONT_BACK_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x + 1,
-                                       y + 1,
-                                       z,
-                                       BlockNormal::FRONT_BACK_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y + 1,
-                                       z,
-                                       BlockNormal::FRONT_BACK_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2]});
-          m_Indices.insert(m_Indices.end(),
-                           {(uint)idx, (uint)idx + 1, (uint)idx + 2,
-                            (uint)idx + 3, (uint)idx + 4, (uint)idx + 5});
-        }
-        // Left
-        if (blockX == 0 ||
-            blocks[blockIndex(blockX - 1, blockY, blockZ)] ==
-              BlockType::AIR) {
-          x = chunkXToPosition + blockX;
-          y = blockY;
-          z = chunkZToPosition + blockZ;
-          size_t idx = m_Data.size() / 7;
-          m_Data.insert(m_Data.end(), {x,
-                                       y,
-                                       z,
-                                       BlockNormal::RIGHT_LEFT_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y,
-                                       z + 1,
-                                       BlockNormal::RIGHT_LEFT_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y + 1,
-                                       z,
-                                       BlockNormal::RIGHT_LEFT_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y,
-                                       z + 1,
-                                       BlockNormal::RIGHT_LEFT_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y + 1,
-                                       z + 1,
-                                       BlockNormal::RIGHT_LEFT_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y + 1,
-                                       z,
-                                       BlockNormal::RIGHT_LEFT_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2]});
-          m_Indices.insert(m_Indices.end(),
-                           {(uint)idx, (uint)idx + 1, (uint)idx + 2,
-                            (uint)idx + 3, (uint)idx + 4, (uint)idx + 5});
-        }
-        // Right
-        if (blockX + 1 == Constants::Chunk::LENGTH ||
-            blocks[blockIndex(blockX + 1, blockY, blockZ)] ==
-              BlockType::AIR) {
-          x = chunkXToPosition + blockX + 1;
-          y = blockY;
-          z = chunkZToPosition + blockZ;
-          size_t idx = m_Data.size() / 7;
-          m_Data.insert(m_Data.end(), {x,
-                                       y,
-                                       z,
-                                       BlockNormal::RIGHT_LEFT_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y,
-                                       z + 1,
-                                       BlockNormal::RIGHT_LEFT_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y + 1,
-                                       z,
-                                       BlockNormal::RIGHT_LEFT_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y,
-                                       z + 1,
-                                       BlockNormal::RIGHT_LEFT_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y + 1,
-                                       z + 1,
-                                       BlockNormal::RIGHT_LEFT_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2],
-                                       x,
-                                       y + 1,
-                                       z,
-                                       BlockNormal::RIGHT_LEFT_NORMAL,
-                                       color[0],
-                                       color[1],
-                                       color[2]});
-          m_Indices.insert(m_Indices.end(),
-                           {(uint)idx, (uint)idx + 1, (uint)idx + 2,
-                            (uint)idx + 3, (uint)idx + 4, (uint)idx + 5});
+        for (int j = 0; j < dimV; ++j) {
+          for (int i = 0; i < dimU; ++i) {
+            int mIndex = j * dimU + i;
+            int id = mask[mIndex];
+            if (id == 0) continue;
+
+            int width = 1;
+            while (i + width < dimU && mask[j * dimU + (i + width)] == id)
+              ++width;
+
+            int height = 1;
+            bool done = false;
+            while (!done && j + height < dimV) {
+              for (int k2 = 0; k2 < width; ++k2) {
+                if (mask[(j + height) * dimU + (i + k2)] != id) {
+                  done = true;
+                  break;
+                }
+              }
+              if (!done) ++height;
+            }
+
+            int aCoord[3] = {0, 0, 0};
+            aCoord[d] = slice + (dir == 1 ? 1 : 0);
+            aCoord[u] = i;
+            aCoord[v] = j;
+
+            glm::ivec3 a3 = glm::ivec3(aCoord[0], aCoord[1], aCoord[2]);
+
+            int duArr[3] = {0, 0, 0};
+            int dvArr[3] = {0, 0, 0};
+            duArr[u] = width;
+            dvArr[v] = height;
+
+            glm::ivec3 du3 = glm::ivec3(duArr[0], duArr[1], duArr[2]);
+            glm::ivec3 dv3 = glm::ivec3(dvArr[0], dvArr[1], dvArr[2]);
+
+            BlockNormal normalId;
+            if (d == 0) {
+              normalId = BlockNormal::RIGHT_LEFT_NORMAL;
+            } else if (d == 1) {
+              normalId = (dir == 1) ? BlockNormal::TOP_NORMAL
+                                     : BlockNormal::BOTTOM_NORMAL;
+            } else {
+              normalId = BlockNormal::FRONT_BACK_NORMAL;
+            }
+
+            BlockType mat = static_cast<BlockType>(id - 1);
+            glm::vec3 color = blockColor(mat);
+
+            addQuad(a3, du3, dv3, normalId, color);
+
+            for (int hj = 0; hj < height; ++hj) {
+              for (int wi = 0; wi < width; ++wi) {
+                mask[(j + hj) * dimU + (i + wi)] = 0;
+              }
+            }
+
+            i += width - 1;
+          }
         }
       }
     }
