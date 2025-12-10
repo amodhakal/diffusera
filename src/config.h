@@ -49,6 +49,9 @@ constexpr int HEIGHT = 256;
 constexpr int RENDER_DISTANCE_CHUNKS = 24;
 constexpr int RENDER_DISTANCE_BLOCKS = RENDER_DISTANCE_CHUNKS * LENGTH;
 constexpr int MAX_BLOCK_HEIGHT = HEIGHT / 2.0;
+// Limit concurrent chunk generation threads to avoid spawning thousands of
+// threads which can blow memory. Tune to CPU core count / desired parallelism.
+constexpr int MAX_GENERATION_THREADS = 8;
 }  // namespace Chunk
 
 namespace Noise {

@@ -11,6 +11,18 @@
 
 void Chunk::generateMeshData(const glm::vec2 &position,
                              const FastNoiseLite &noiseGenerator) {
+  // Use a heap-allocated flat buffer for block storage so we don't keep a
+  // large fixed-size member inside each Chunk instance after generation.
+  const size_t BX = Constants::Chunk::LENGTH;
+  const size_t BY = Constants::Chunk::HEIGHT;
+  const size_t BZ = Constants::Chunk::LENGTH;
+  std::vector<BlockType> blocks(BX * BY * BZ, BlockType::AIR);
+
+  auto blockIndex = [&](int x, int y, int z) -> size_t {
+    return (static_cast<size_t>(x) * BY + static_cast<size_t>(y)) * BZ +
+           static_cast<size_t>(z);
+  };
+
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
       if (position.s < 0 || position.t < 0) {
@@ -35,14 +47,14 @@ void Chunk::generateMeshData(const glm::vec2 &position,
       m_HeightMap[blockX][blockZ] = grassHeight;
 
       for (int blockY = 0; blockY < grassHeight; blockY++) {
-        m_Blocks[blockX][blockY][blockZ] = BlockType::DIRT;
+        blocks[blockIndex(blockX, blockY, blockZ)] = BlockType::DIRT;
       }
 
-      m_Blocks[blockX][grassHeight][blockZ] = BlockType::GRASS;
+      blocks[blockIndex(blockX, grassHeight, blockZ)] = BlockType::GRASS;
 
       for (int blockY = grassHeight + 1; blockY < Constants::Chunk::HEIGHT;
            blockY++) {
-        m_Blocks[blockX][blockY][blockZ] = BlockType::AIR;
+        blocks[blockIndex(blockX, blockY, blockZ)] = BlockType::AIR;
       }
     }
   }
@@ -56,7 +68,7 @@ void Chunk::generateMeshData(const glm::vec2 &position,
   for (uint blockX = 0; blockX < Constants::Chunk::LENGTH; blockX++) {
     for (uint blockY = 0; blockY < Constants::Chunk::HEIGHT; blockY++) {
       for (uint blockZ = 0; blockZ < Constants::Chunk::LENGTH; blockZ++) {
-        BlockType current = m_Blocks[blockX][blockY][blockZ];
+        BlockType current = blocks[blockIndex(blockX, blockY, blockZ)];
         glm::vec3 color;
         switch (current) {
           case BlockType::AIR:
@@ -75,7 +87,8 @@ void Chunk::generateMeshData(const glm::vec2 &position,
         float x, y, z;
         // Top
         if (blockY + 1 == Constants::Chunk::HEIGHT ||
-            m_Blocks[blockX][blockY + 1][blockZ] == BlockType::AIR) {
+            blocks[blockIndex(blockX, blockY + 1, blockZ)] ==
+              BlockType::AIR) {
           x = blockX;
           y = blockY + 1;
           z = blockZ;
@@ -128,7 +141,8 @@ void Chunk::generateMeshData(const glm::vec2 &position,
         }
         // Bottom
         if (blockY == 0 ||
-            m_Blocks[blockX][blockY - 1][blockZ] == BlockType::AIR) {
+            blocks[blockIndex(blockX, blockY - 1, blockZ)] ==
+              BlockType::AIR) {
           x = chunkXToPosition + blockX;
           y = blockY;
           z = chunkZToPosition + blockZ;
@@ -181,7 +195,8 @@ void Chunk::generateMeshData(const glm::vec2 &position,
         }
         // Front
         if (blockZ + 1 == Constants::Chunk::LENGTH ||
-            m_Blocks[blockX][blockY][blockZ + 1] == BlockType::AIR) {
+            blocks[blockIndex(blockX, blockY, blockZ + 1)] ==
+              BlockType::AIR) {
           x = chunkXToPosition + blockX;
           y = blockY;
           z = chunkZToPosition + blockZ + 1;
@@ -234,7 +249,8 @@ void Chunk::generateMeshData(const glm::vec2 &position,
         }
         // Back
         if (blockZ == 0 ||
-            m_Blocks[blockX][blockY][blockZ - 1] == BlockType::AIR) {
+            blocks[blockIndex(blockX, blockY, blockZ - 1)] ==
+              BlockType::AIR) {
           x = chunkXToPosition + blockX;
           y = blockY;
           z = chunkZToPosition + blockZ;
@@ -287,7 +303,8 @@ void Chunk::generateMeshData(const glm::vec2 &position,
         }
         // Left
         if (blockX == 0 ||
-            m_Blocks[blockX - 1][blockY][blockZ] == BlockType::AIR) {
+            blocks[blockIndex(blockX - 1, blockY, blockZ)] ==
+              BlockType::AIR) {
           x = chunkXToPosition + blockX;
           y = blockY;
           z = chunkZToPosition + blockZ;
@@ -340,7 +357,8 @@ void Chunk::generateMeshData(const glm::vec2 &position,
         }
         // Right
         if (blockX + 1 == Constants::Chunk::LENGTH ||
-            m_Blocks[blockX + 1][blockY][blockZ] == BlockType::AIR) {
+            blocks[blockIndex(blockX + 1, blockY, blockZ)] ==
+              BlockType::AIR) {
           x = chunkXToPosition + blockX + 1;
           y = blockY;
           z = chunkZToPosition + blockZ;
@@ -411,9 +429,13 @@ void Chunk::pass() {
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_Indices.size() * sizeof(uint),
                m_Indices.data(), GL_STATIC_DRAW);
 
+  m_IndexCount = static_cast<uint>(m_Indices.size());
   m_VboSize = m_Data.size();
+
   m_Data.clear();
+  m_Indices.clear();
   m_Data.shrink_to_fit();
+  m_Indices.shrink_to_fit();
 
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)0);
   glEnableVertexAttribArray(0);
@@ -438,7 +460,7 @@ void Chunk::cleanup() {
 
 void Chunk::render() {
   glBindVertexArray(m_VAO);
-  glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_Indices.size()),
+  glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_IndexCount),
                  GL_UNSIGNED_INT, 0);
 }
 

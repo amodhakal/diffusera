@@ -116,10 +116,20 @@ void ChunkManager::render(const Camera* camera, Shader& shader) {
         continue;
       }
 
+      // Respect a limit on concurrent generation threads to avoid high memory
+      // use when many chunks are requested at once.
+      if (static_cast<int>(m_ProcessingChunks.size()) >=
+          Constants::Chunk::MAX_GENERATION_THREADS) {
+        // Skip spawning this frame; it will be retried next render.
+        continue;
+      }
+
       m_ProcessingPositions.insert(position);
 
-      // Ask the chunk to be generated in the background
-      FastNoiseLite& noiseCopy = m_NoiseGenerator;
+      // Ask the chunk to be generated in the background. Capture the noise
+      // generator by value is potentially costly; capture a reference wrapper
+      // (copying light-weight handles) or just copy the generator if cheap.
+      FastNoiseLite noiseCopy = m_NoiseGenerator;
       m_ProcessingChunks[position] =
           std::async(std::launch::async, [position, noiseCopy]() mutable {
             Chunk chunk;
