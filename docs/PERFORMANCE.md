@@ -21,3 +21,4 @@
 ## (24 chunks with DO_TRIANGLE_LINE to false)
 
 - **Current:** 54 fps and 1,650 MB
+- **With textures, greedy meshing:** 120 fps and 251 MB
