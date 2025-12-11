@@ -15,7 +15,7 @@ constexpr auto FRAGMENT_PATH = "./shaders/shaders.frag";
 constexpr uint SCR_WIDTH = 800;
 constexpr uint SCR_HEIGHT = 600;
 
-constexpr auto BG_COLOR = glm::vec4(0.1, 0.1, 0.1, 1.0);
+constexpr auto BG_COLOR = glm::vec4(0.3, 0.5, 0.6, 1.0);
 
 constexpr bool DO_TRIANGLE_LINE = false;
 constexpr bool DO_GRAVITY = false;
