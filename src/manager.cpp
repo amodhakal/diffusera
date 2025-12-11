@@ -11,30 +11,17 @@
 #include <future>
 #include <glm/glm.hpp>
 
-#include "frustum.h"
 #include "chunk.h"
 #include "config.h"
+#include "frustum.h"
 
-ChunkManager::ChunkManager() {
-  float seed = std::rand();
+void ChunkManager::load() {}
 
-  m_NoiseGenerator = FastNoiseLite(seed);
-  m_NoiseGenerator.SetNoiseType(Constants::Noise::NOISE_TYPE);
-  m_NoiseGenerator.SetFractalType(Constants::Noise::FRACTAL_TYPE);
-  m_NoiseGenerator.SetFractalOctaves(Constants::Noise::FRACTAL_OCTAVE);
-  m_NoiseGenerator.SetFractalGain(Constants::Noise::FRACTAL_GAIN);
-  m_NoiseGenerator.SetFractalLacunarity(Constants::Noise::FRACTAL_LACUNARITY);
-  m_NoiseGenerator.SetFrequency(Constants::Noise::FREQUENCY);
-}
-
-void ChunkManager::load() {
-}
-
-void ChunkManager::render(const Camera* camera, Shader& shader) {
+void ChunkManager::render(const Camera *camera, Shader &shader) {
   glm::vec3 cameraPosition = camera->m_Position;
 
   for (auto it = m_ProcessedChunks.begin(); it != m_ProcessedChunks.end();) {
-    const glm::vec2& position = it->first;
+    const glm::vec2 &position = it->first;
     float chunkCenterX = position.s * Constants::Chunk::LENGTH -
                          (Constants::Chunk::LENGTH / 2.0f);
     float chunkCenterZ = position.t * Constants::Chunk::LENGTH -
@@ -57,7 +44,7 @@ void ChunkManager::render(const Camera* camera, Shader& shader) {
 
   for (auto it = m_ProcessingChunks.begin(); it != m_ProcessingChunks.end();) {
     const glm::vec2 position = it->first;
-    std::future<Chunk>& worker = it->second;
+    std::future<Chunk> &worker = it->second;
 
     if (worker.wait_for(std::chrono::milliseconds(0)) !=
         std::future_status::ready) {
@@ -125,15 +112,10 @@ void ChunkManager::render(const Camera* camera, Shader& shader) {
       }
 
       m_ProcessingPositions.insert(position);
-
-      // Ask the chunk to be generated in the background. Capture the noise
-      // generator by value is potentially costly; capture a reference wrapper
-      // (copying light-weight handles) or just copy the generator if cheap.
-      FastNoiseLite noiseCopy = m_NoiseGenerator;
       m_ProcessingChunks[position] =
-          std::async(std::launch::async, [position, noiseCopy]() mutable {
+          std::async(std::launch::async, [position]() mutable {
             Chunk chunk;
-            chunk.generateMeshData(position, noiseCopy);
+            chunk.generateMeshData(position);
             return chunk;
           });
     }
@@ -142,14 +124,14 @@ void ChunkManager::render(const Camera* camera, Shader& shader) {
   shader.use();
   Frustum frustum(camera);
 
-  for (auto& value : m_ProcessedChunks) {
-    const glm::vec2& position = value.first;
+  for (auto &value : m_ProcessedChunks) {
+    const glm::vec2 &position = value.first;
 
     if (!frustum.isChunkInside(position)) {
       continue;
     }
 
-    Chunk& chunk = value.second;
+    Chunk &chunk = value.second;
 
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(
@@ -163,7 +145,7 @@ void ChunkManager::render(const Camera* camera, Shader& shader) {
   }
 }
 
-float ChunkManager::getPositionHighestY(const glm::vec3& cameraPosition) {
+float ChunkManager::getPositionHighestY(const glm::vec3 &cameraPosition) {
   // Compute chunk coordinates using same logic as rendering to match keys
   int chunkX = static_cast<int>(
       std::floor((cameraPosition.x + (Constants::Chunk::LENGTH / 2.0f)) /
@@ -189,7 +171,7 @@ float ChunkManager::getPositionHighestY(const glm::vec3& cameraPosition) {
       std::clamp(localZ, 0, static_cast<int>(Constants::Chunk::LENGTH - 1));
 
   if (m_ProcessedChunks.contains(chunkPosition)) {
-    Chunk& chunk = m_ProcessedChunks[chunkPosition];
+    Chunk &chunk = m_ProcessedChunks[chunkPosition];
     return static_cast<float>(chunk.getHighestBlockY(
         static_cast<uint>(localX), static_cast<uint>(localZ)));
   }

@@ -1,6 +1,4 @@
 #include "chunk.h"
-
-#include "noise/inigo_noise.h"
 #include <noise/noise.h>
 
 #include <cassert>
@@ -8,8 +6,7 @@
 
 #include "config.h"
 
-void Chunk::generateMeshData(const glm::vec2 &position,
-                             const FastNoiseLite &noiseGenerator) {
+void Chunk::generateMeshData(const glm::vec2 &position) {
   const size_t BX = Constants::Chunk::LENGTH;
   const size_t BY = Constants::Chunk::HEIGHT;
   const size_t BZ = Constants::Chunk::LENGTH;
@@ -31,9 +28,7 @@ void Chunk::generateMeshData(const glm::vec2 &position,
       float noiseX = baseX + blockX;
       float noiseZ = baseZ + blockZ;
 
-      // Use Inigo-style value-noise fbm (returns value in [-1,1]) then map
-      // to [0,1] like the previous FastNoiseLite usage.
-      auto n = InigoNoise::fbm(
+      auto n = Noise::fbm(
           glm::vec2(noiseX, noiseZ) * Constants::Noise::FREQUENCY,
           Constants::Noise::FRACTAL_OCTAVE,
           Constants::Noise::FRACTAL_LACUNARITY, Constants::Noise::FRACTAL_GAIN);

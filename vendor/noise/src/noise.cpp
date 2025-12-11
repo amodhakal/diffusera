@@ -1,11 +1,8 @@
-#include "noise/inigo_noise.h"
-
-#include <cmath>
 #include <cstdint>
 #include <glm/glm.hpp>
+#include <noise/noise.h>
 
 namespace {
-// Integer hash -> float in [0,1]
 inline float hash21(int32_t x, int32_t y) {
   uint32_t n = static_cast<uint32_t>(x) + static_cast<uint32_t>(y) * 57u;
   n = (n << 13) ^ n;
@@ -13,20 +10,20 @@ inline float hash21(int32_t x, int32_t y) {
   return 1.0f - static_cast<float>(nn) / 1073741824.0f; // -> [-1,1]
 }
 
-// cubic or quintic smoothing functions
 inline float quintic(float t) {
   return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
 }
+
 inline float quintic_d(float t) {
   return 30.0f * t * t * (t * (t - 1.0f) + 2.0f);
 }
-// map from [0,1] hash to [0,1]
+
 inline float hash01(int32_t x, int32_t y) {
   return 0.5f * (hash21(x, y) + 1.0f);
 }
 } // namespace
 
-namespace InigoNoise {
+namespace Noise {
 
 Noise2D noised(const glm::vec2 &p) {
   glm::vec2 P = glm::floor(p);
@@ -55,11 +52,8 @@ Noise2D noised(const glm::vec2 &p) {
   float dn_dx = (k1 + k3 * uy) * dux;
   float dn_dy = (k2 + k3 * ux) * duy;
 
-  // Map n from [0,1] -> [-1,1] to be consistent with common noise APIs
-  Noise2D out;
-  out.value = -1.0f + 2.0f * n;
-  // derivative scaling: d(out)/dx = 2 * dn/dx
-  out.deriv = glm::vec2(2.0f * dn_dx, 2.0f * dn_dy);
+  Noise2D out = {.value = -1.0f + 2.0f * n,
+                 .deriv = glm::vec2(2.0f * dn_dx, 2.0f * dn_dy)};
   return out;
 }
 
@@ -80,14 +74,12 @@ Noise2D fbm(const glm::vec2 &p, int octaves, float lacunarity, float gain) {
   }
 
   if (maxAmp > 0.0f) {
-    value /= maxAmp;   // normalize to expected [-1,1]
+    value /= maxAmp;
     deriv /= maxAmp;
   }
 
-  Noise2D out;
-  out.value = value;
-  out.deriv = deriv;
+  Noise2D out = {value, deriv};
   return out;
 }
 
-} // namespace InigoNoise
+} // namespace Noise

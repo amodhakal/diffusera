@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "config.h"
-#include "noise/noise.h"
 
 enum BlockType : uint8_t { AIR = 0, GRASS = 1, DIRT = 2 };
 
@@ -17,18 +16,17 @@ enum BlockNormal : uint8_t {
 };
 
 class Chunk {
- public:
+public:
   Chunk() = default;
 
-  void generateMeshData(const glm::vec2& position,
-                        const FastNoiseLite& noiseGenerator);
+  void generateMeshData(const glm::vec2 &position);
 
   void pass();
   void render();
   void cleanup();
   uint getHighestBlockY(uint blockX, uint blockZ);
 
- private:
+private:
   uint m_VAO;
   uint m_VBO;
   uint m_EBO;

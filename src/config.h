@@ -6,8 +6,6 @@
 
 #include <glm/glm.hpp>
 
-#include "noise/noise.h"
-
 namespace Constants {
 constexpr auto VERTEX_PATH = "./shaders/shaders.vert";
 constexpr auto FRAGMENT_PATH = "./shaders/shaders.frag";
@@ -53,8 +51,6 @@ constexpr int MAX_GENERATION_THREADS = 100;
 }  // namespace Chunk
 
 namespace Noise {
-constexpr auto NOISE_TYPE = FastNoiseLite::NoiseType_Perlin;
-constexpr auto FRACTAL_TYPE = FastNoiseLite::FractalType_FBm;
 constexpr int FRACTAL_OCTAVE = 8;
 constexpr float FRACTAL_GAIN = 0.4f;
 constexpr float FRACTAL_LACUNARITY = 2.0f;
