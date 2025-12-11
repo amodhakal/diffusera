@@ -48,17 +48,17 @@ constexpr int LENGTH = 16;
 constexpr int HEIGHT = 256;
 constexpr int RENDER_DISTANCE_CHUNKS = 24;
 constexpr int RENDER_DISTANCE_BLOCKS = RENDER_DISTANCE_CHUNKS * LENGTH;
-constexpr int MAX_BLOCK_HEIGHT = HEIGHT / 2.0;
+constexpr int MAX_BLOCK_HEIGHT = HEIGHT / 1.2;
 constexpr int MAX_GENERATION_THREADS = 100;
 }  // namespace Chunk
 
 namespace Noise {
 constexpr auto NOISE_TYPE = FastNoiseLite::NoiseType_Perlin;
 constexpr auto FRACTAL_TYPE = FastNoiseLite::FractalType_FBm;
-constexpr float FRACTAL_OCTAVE = 2.0;
-constexpr float FRACTAL_GAIN = 0.5;
-constexpr float FRACTAL_LACUNARITY = 2.1;
-constexpr float FREQUENCY = 0.01;
+constexpr int FRACTAL_OCTAVE = 8;
+constexpr float FRACTAL_GAIN = 0.4f;
+constexpr float FRACTAL_LACUNARITY = 2.0f;
+constexpr float FREQUENCY = 0.005f;
 
 }  // namespace Noise
 
