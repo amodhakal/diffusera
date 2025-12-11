@@ -1,11 +1,10 @@
 #include "chunk.h"
 
+#include "noise/inigo_noise.h"
 #include <noise/noise.h>
 
 #include <cassert>
 #include <cmath>
-#include <stdexcept>
-#include <string>
 
 #include "config.h"
 
@@ -32,10 +31,15 @@ void Chunk::generateMeshData(const glm::vec2 &position,
       float noiseX = baseX + blockX;
       float noiseZ = baseZ + blockZ;
 
-      // (-1, 1) -> (0, 1)
-      float noiseY = noiseGenerator.GetNoise(noiseX, noiseZ);
-      noiseY /= 2.0;
-      noiseY += 0.5;
+      // Use Inigo-style value-noise fbm (returns value in [-1,1]) then map
+      // to [0,1] like the previous FastNoiseLite usage.
+      auto n = InigoNoise::fbm(
+          glm::vec2(noiseX, noiseZ) * Constants::Noise::FREQUENCY,
+          Constants::Noise::FRACTAL_OCTAVE,
+          Constants::Noise::FRACTAL_LACUNARITY, Constants::Noise::FRACTAL_GAIN);
+      float noiseY = n.value;
+      noiseY /= 2.0f;
+      noiseY += 0.5f;
 
       assert(!isnan(noiseY));
       assert(noiseY >= 0.0);
@@ -73,14 +77,16 @@ void Chunk::generateMeshData(const glm::vec2 &position,
   // Map (block type, face normal) -> texture unit id
   auto blockTextureId = [&](BlockType t, BlockNormal n) -> int {
     switch (t) {
-      case BlockType::GRASS:
-        if (n == BlockNormal::TOP_NORMAL) return 0;     // grass_top
-        if (n == BlockNormal::BOTTOM_NORMAL) return 2;  // dirt underside
-        return 1;                                       // grass_side
-      case BlockType::DIRT:
-        return 2;  // dirt
-      default:
-        return 2;
+    case BlockType::GRASS:
+      if (n == BlockNormal::TOP_NORMAL)
+        return 0; // grass_top
+      if (n == BlockNormal::BOTTOM_NORMAL)
+        return 2; // dirt underside
+      return 1;   // grass_side
+    case BlockType::DIRT:
+      return 2; // dirt
+    default:
+      return 2;
     }
   };
 
@@ -122,10 +128,6 @@ void Chunk::generateMeshData(const glm::vec2 &position,
       pushVertex(p2, glm::vec2(0.0f, height));
       pushVertex(p3, glm::vec2(width, height));
     } else {
-      // Flip the V coordinate so the texture's vertical orientation aligns with
-      // the world (useful for faces where the quad is generated in the
-      // negative direction). This keeps the grass strip at the top of side
-      // textures.
       pushVertex(p0, glm::vec2(0.0f, height));
       pushVertex(p1, glm::vec2(width, height));
       pushVertex(p2, glm::vec2(0.0f, 0.0f));
@@ -192,7 +194,8 @@ void Chunk::generateMeshData(const glm::vec2 &position,
           for (int i = 0; i < dimU; ++i) {
             int mIndex = j * dimU + i;
             int id = mask[mIndex];
-            if (id == 0) continue;
+            if (id == 0)
+              continue;
 
             int width = 1;
             while (i + width < dimU && mask[j * dimU + (i + width)] == id)
@@ -207,7 +210,8 @@ void Chunk::generateMeshData(const glm::vec2 &position,
                   break;
                 }
               }
-              if (!done) ++height;
+              if (!done)
+                ++height;
             }
 
             int aCoord[3] = {0, 0, 0};
@@ -238,9 +242,6 @@ void Chunk::generateMeshData(const glm::vec2 &position,
             BlockType mat = static_cast<BlockType>(id - 1);
             int texId = blockTextureId(mat, normalId);
 
-            // Only flip V for -Z faces (d==2 and dir==-1) so that the vertical
-            // orientation of side textures (grass_side) matches between the
-            // front/back faces. +Z faces are left unflipped.
             bool flipV = (d == 2 && dir == -1);
             addQuad(a3, du3, dv3, normalId, texId, flipV);
 
