@@ -16,6 +16,8 @@ const CHUNK_HEIGHT = 1024;
 const BLOCK_AIR = 0;
 const BLOCK_SOLID = 1;
 
+import { getTerrainHeight } from "./noise";
+
 type Vec3 = [number, number, number];
 type Mat4 = Float32Array;
 
@@ -208,7 +210,7 @@ function createChunk(chunkX: number, chunkZ: number): Chunk {
     for (let localX = 0; localX < CHUNK_SIZE_X; localX += 1) {
       const worldX = chunkX * CHUNK_SIZE_X + localX;
       const worldZ = chunkZ * CHUNK_SIZE_Z + localZ;
-      const height = CHUNK_HEIGHT;
+      const height = getTerrainHeight(worldX, worldZ);
 
       for (let y = 0; y < height; y += 1) {
         blocks[getBlockIndex(localX, y, localZ)] = BLOCK_SOLID;
