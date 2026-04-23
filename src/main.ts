@@ -13,9 +13,7 @@ const VERTEX_STRIDE = FLOATS_PER_VERTEX * Float32Array.BYTES_PER_ELEMENT;
 const CHUNK_SIZE_X = 16;
 const CHUNK_SIZE_Z = 16;
 const CHUNK_HEIGHT = 1024;
-const RENDER_DISTANCE_CHUNKS = 3;
-const BLOCK_AIR = 0;
-const BLOCK_SOLID = 1;
+const RENDER_DISTANCE_CHUNKS = 32;
 
 import { getTerrainHeight } from "./noise";
 
@@ -25,7 +23,8 @@ type Mat4 = Float32Array;
 type Chunk = {
   chunkX: number;
   chunkZ: number;
-  blocks: Uint8Array;
+  baseHeights: Uint16Array;
+  topHeights: Uint16Array;
 };
 
 type ChunkMesh = {
@@ -40,80 +39,6 @@ type RenderChunk = {
   indexBuffer: GPUBuffer;
   indexCount: number;
 };
-
-type FaceDefinition = {
-  normal: [number, number, number];
-  corners: [
-    [number, number, number],
-    [number, number, number],
-    [number, number, number],
-    [number, number, number],
-  ];
-  neighborOffset: [number, number, number];
-};
-
-const FACE_DEFINITIONS: FaceDefinition[] = [
-  {
-    normal: [0, 0, 1],
-    corners: [
-      [0, 0, 1],
-      [1, 0, 1],
-      [1, 1, 1],
-      [0, 1, 1],
-    ],
-    neighborOffset: [0, 0, 1],
-  },
-  {
-    normal: [0, 0, -1],
-    corners: [
-      [1, 0, 0],
-      [0, 0, 0],
-      [0, 1, 0],
-      [1, 1, 0],
-    ],
-    neighborOffset: [0, 0, -1],
-  },
-  {
-    normal: [1, 0, 0],
-    corners: [
-      [1, 0, 1],
-      [1, 0, 0],
-      [1, 1, 0],
-      [1, 1, 1],
-    ],
-    neighborOffset: [1, 0, 0],
-  },
-  {
-    normal: [-1, 0, 0],
-    corners: [
-      [0, 0, 0],
-      [0, 0, 1],
-      [0, 1, 1],
-      [0, 1, 0],
-    ],
-    neighborOffset: [-1, 0, 0],
-  },
-  {
-    normal: [0, 1, 0],
-    corners: [
-      [0, 1, 1],
-      [1, 1, 1],
-      [1, 1, 0],
-      [0, 1, 0],
-    ],
-    neighborOffset: [0, 1, 0],
-  },
-  {
-    normal: [0, -1, 0],
-    corners: [
-      [0, 0, 0],
-      [1, 0, 0],
-      [1, 0, 1],
-      [0, 0, 1],
-    ],
-    neighborOffset: [0, -1, 0],
-  },
-];
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -218,21 +143,21 @@ function createSolidColor(
 }
 
 function createChunk(chunkX: number, chunkZ: number): Chunk {
-  const blocks = new Uint8Array(CHUNK_SIZE_X * CHUNK_HEIGHT * CHUNK_SIZE_Z);
+  const baseHeights = new Uint16Array(CHUNK_SIZE_X * CHUNK_SIZE_Z);
+  const topHeights = new Uint16Array(CHUNK_SIZE_X * CHUNK_SIZE_Z);
 
   for (let localZ = 0; localZ < CHUNK_SIZE_Z; localZ += 1) {
     for (let localX = 0; localX < CHUNK_SIZE_X; localX += 1) {
       const worldX = chunkX * CHUNK_SIZE_X + localX;
       const worldZ = chunkZ * CHUNK_SIZE_Z + localZ;
-      const height = getTerrainHeight(worldX, worldZ);
-
-      for (let y = 0; y < height; y += 1) {
-        blocks[getBlockIndex(localX, y, localZ)] = BLOCK_SOLID;
-      }
+      const cellIndex = getCellIndex(localX, localZ);
+      const topHeight = clamp(getTerrainHeight(worldX, worldZ), 0, CHUNK_HEIGHT);
+      baseHeights[cellIndex] = 0;
+      topHeights[cellIndex] = topHeight;
     }
   }
 
-  return { chunkX, chunkZ, blocks };
+  return { chunkX, chunkZ, baseHeights, topHeights };
 }
 
 function getChunkKey(chunkX: number, chunkZ: number) {
@@ -243,23 +168,24 @@ function getChunkCoordinate(worldCoordinate: number, chunkSize: number) {
   return Math.floor(worldCoordinate / chunkSize);
 }
 
-function getBlockIndex(x: number, y: number, z: number) {
-  return x + z * CHUNK_SIZE_X + y * CHUNK_SIZE_X * CHUNK_SIZE_Z;
+function getCellIndex(x: number, z: number) {
+  return x + z * CHUNK_SIZE_X;
 }
 
-function getChunkBlock(chunk: Chunk, x: number, y: number, z: number) {
-  if (
-    x < 0 ||
-    x >= CHUNK_SIZE_X ||
-    y < 0 ||
-    y >= CHUNK_HEIGHT ||
-    z < 0 ||
-    z >= CHUNK_SIZE_Z
-  ) {
-    return BLOCK_AIR;
+function getChunkCellBaseHeight(chunk: Chunk, x: number, z: number) {
+  if (x < 0 || x >= CHUNK_SIZE_X || z < 0 || z >= CHUNK_SIZE_Z) {
+    return 0;
   }
 
-  return chunk.blocks[getBlockIndex(x, y, z)];
+  return chunk.baseHeights[getCellIndex(x, z)];
+}
+
+function getChunkCellTopHeight(chunk: Chunk, x: number, z: number) {
+  if (x < 0 || x >= CHUNK_SIZE_X || z < 0 || z >= CHUNK_SIZE_Z) {
+    return 0;
+  }
+
+  return chunk.topHeights[getCellIndex(x, z)];
 }
 
 function getBlockColor(y: number, normalY: number): [number, number, number] {
@@ -280,47 +206,125 @@ function buildChunkMesh(chunk: Chunk) {
   const vertices: number[] = [];
   const indices: number[] = [];
   let vertexCount = 0;
+  const chunkWorldX = chunk.chunkX * CHUNK_SIZE_X;
+  const chunkWorldZ = chunk.chunkZ * CHUNK_SIZE_Z;
 
-  for (let y = 0; y < CHUNK_HEIGHT; y += 1) {
-    for (let z = 0; z < CHUNK_SIZE_Z; z += 1) {
-      for (let x = 0; x < CHUNK_SIZE_X; x += 1) {
-        if (getChunkBlock(chunk, x, y, z) === BLOCK_AIR) {
-          continue;
-        }
+  const pushFace = (
+    corners: [number, number, number][],
+    normalY: number,
+    colorY: number,
+  ) => {
+    const [r, g, b] = getBlockColor(colorY, normalY);
 
-        for (const face of FACE_DEFINITIONS) {
-          const [offsetX, offsetY, offsetZ] = face.neighborOffset;
+    for (const [cornerX, cornerY, cornerZ] of corners) {
+      vertices.push(cornerX, cornerY, cornerZ, r, g, b);
+    }
 
-          if (
-            getChunkBlock(chunk, x + offsetX, y + offsetY, z + offsetZ) !==
-            BLOCK_AIR
-          ) {
-            continue;
-          }
+    indices.push(
+      vertexCount,
+      vertexCount + 1,
+      vertexCount + 2,
+      vertexCount,
+      vertexCount + 2,
+      vertexCount + 3,
+    );
+    vertexCount += 4;
+  };
 
-          const [r, g, b] = getBlockColor(y, face.normal[1]);
+  for (let z = 0; z < CHUNK_SIZE_Z; z += 1) {
+    for (let x = 0; x < CHUNK_SIZE_X; x += 1) {
+      const baseHeight = getChunkCellBaseHeight(chunk, x, z);
+      const topHeight = getChunkCellTopHeight(chunk, x, z);
 
-          for (const corner of face.corners) {
-            vertices.push(
-              chunk.chunkX * CHUNK_SIZE_X + x + corner[0],
-              y + corner[1],
-              chunk.chunkZ * CHUNK_SIZE_Z + z + corner[2],
-              r,
-              g,
-              b,
-            );
-          }
+      if (topHeight <= baseHeight) {
+        continue;
+      }
 
-          indices.push(
-            vertexCount,
-            vertexCount + 1,
-            vertexCount + 2,
-            vertexCount,
-            vertexCount + 2,
-            vertexCount + 3,
-          );
-          vertexCount += 4;
-        }
+      const worldX = chunkWorldX + x;
+      const worldZ = chunkWorldZ + z;
+      const topY = topHeight;
+
+      pushFace(
+        [
+          [worldX, topY, worldZ + 1],
+          [worldX + 1, topY, worldZ + 1],
+          [worldX + 1, topY, worldZ],
+          [worldX, topY, worldZ],
+        ],
+        1,
+        topY - 1,
+      );
+
+      const northTopHeight = clamp(
+        getTerrainHeight(worldX, worldZ + 1),
+        0,
+        CHUNK_HEIGHT,
+      );
+      if (northTopHeight < topHeight) {
+        pushFace(
+          [
+            [worldX, northTopHeight, worldZ + 1],
+            [worldX + 1, northTopHeight, worldZ + 1],
+            [worldX + 1, topY, worldZ + 1],
+            [worldX, topY, worldZ + 1],
+          ],
+          0,
+          Math.max(northTopHeight, topY - 1),
+        );
+      }
+
+      const southTopHeight = clamp(
+        getTerrainHeight(worldX, worldZ - 1),
+        0,
+        CHUNK_HEIGHT,
+      );
+      if (southTopHeight < topHeight) {
+        pushFace(
+          [
+            [worldX + 1, southTopHeight, worldZ],
+            [worldX, southTopHeight, worldZ],
+            [worldX, topY, worldZ],
+            [worldX + 1, topY, worldZ],
+          ],
+          0,
+          Math.max(southTopHeight, topY - 1),
+        );
+      }
+
+      const eastTopHeight = clamp(
+        getTerrainHeight(worldX + 1, worldZ),
+        0,
+        CHUNK_HEIGHT,
+      );
+      if (eastTopHeight < topHeight) {
+        pushFace(
+          [
+            [worldX + 1, eastTopHeight, worldZ + 1],
+            [worldX + 1, eastTopHeight, worldZ],
+            [worldX + 1, topY, worldZ],
+            [worldX + 1, topY, worldZ + 1],
+          ],
+          0,
+          Math.max(eastTopHeight, topY - 1),
+        );
+      }
+
+      const westTopHeight = clamp(
+        getTerrainHeight(worldX - 1, worldZ),
+        0,
+        CHUNK_HEIGHT,
+      );
+      if (westTopHeight < topHeight) {
+        pushFace(
+          [
+            [worldX, westTopHeight, worldZ],
+            [worldX, westTopHeight, worldZ + 1],
+            [worldX, topY, worldZ + 1],
+            [worldX, topY, worldZ],
+          ],
+          0,
+          Math.max(westTopHeight, topY - 1),
+        );
       }
     }
   }

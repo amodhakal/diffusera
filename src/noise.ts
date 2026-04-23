@@ -83,11 +83,11 @@ const WORLD_SEED = 42;
 const noise = new PerlinNoise(WORLD_SEED);
 
 export function getTerrainHeight(worldX: number, worldZ: number): number {
-  const scale = 0.02;
+  const scale = 0.005;
   const heightScale = 200;
   const baseHeight = 512;
 
-  const n = noise.fbm(worldX * scale, worldZ * scale, 4, 2, 0.5);
+  const n = noise.fbm(worldX * scale, worldZ * scale, 4, 0.5, 0.5);
   const height = baseHeight + n * heightScale;
 
   return Math.floor(height);
