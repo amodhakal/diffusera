@@ -10,15 +10,94 @@ const resizeObservers = new Set<() => void>();
 const DEG_TO_RAD = Math.PI / 180;
 const FLOATS_PER_VERTEX = 6;
 const VERTEX_STRIDE = FLOATS_PER_VERTEX * Float32Array.BYTES_PER_ELEMENT;
-const IDENTITY_MATRIX = new Float32Array([
-  1, 0, 0, 0,
-  0, 1, 0, 0,
-  0, 0, 1, 0,
-  0, 0, 0, 1,
-]);
+const CHUNK_SIZE_X = 16;
+const CHUNK_SIZE_Z = 16;
+const CHUNK_HEIGHT = 1024;
+const BLOCK_AIR = 0;
+const BLOCK_SOLID = 1;
 
 type Vec3 = [number, number, number];
 type Mat4 = Float32Array;
+
+type Chunk = {
+  chunkX: number;
+  chunkZ: number;
+  blocks: Uint8Array;
+};
+
+type FaceDefinition = {
+  normal: [number, number, number];
+  corners: [
+    [number, number, number],
+    [number, number, number],
+    [number, number, number],
+    [number, number, number],
+  ];
+  neighborOffset: [number, number, number];
+};
+
+const FACE_DEFINITIONS: FaceDefinition[] = [
+  {
+    normal: [0, 0, 1],
+    corners: [
+      [0, 0, 1],
+      [1, 0, 1],
+      [1, 1, 1],
+      [0, 1, 1],
+    ],
+    neighborOffset: [0, 0, 1],
+  },
+  {
+    normal: [0, 0, -1],
+    corners: [
+      [1, 0, 0],
+      [0, 0, 0],
+      [0, 1, 0],
+      [1, 1, 0],
+    ],
+    neighborOffset: [0, 0, -1],
+  },
+  {
+    normal: [1, 0, 0],
+    corners: [
+      [1, 0, 1],
+      [1, 0, 0],
+      [1, 1, 0],
+      [1, 1, 1],
+    ],
+    neighborOffset: [1, 0, 0],
+  },
+  {
+    normal: [-1, 0, 0],
+    corners: [
+      [0, 0, 0],
+      [0, 0, 1],
+      [0, 1, 1],
+      [0, 1, 0],
+    ],
+    neighborOffset: [-1, 0, 0],
+  },
+  {
+    normal: [0, 1, 0],
+    corners: [
+      [0, 1, 1],
+      [1, 1, 1],
+      [1, 1, 0],
+      [0, 1, 0],
+    ],
+    neighborOffset: [0, 1, 0],
+  },
+  {
+    normal: [0, -1, 0],
+    corners: [
+      [0, 0, 0],
+      [1, 0, 0],
+      [1, 0, 1],
+      [0, 0, 1],
+    ],
+    neighborOffset: [0, -1, 0],
+  },
+];
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -41,14 +120,31 @@ function vec3Scale([x, y, z]: Vec3, scalar: number): Vec3 {
   return [x * scalar, y * scalar, z * scalar];
 }
 
-function mat4Perspective(fovY: number, aspect: number, near: number, far: number): Mat4 {
+function mat4Perspective(
+  fovY: number,
+  aspect: number,
+  near: number,
+  far: number,
+): Mat4 {
   const f = 1 / Math.tan(fovY / 2);
 
   return new Float32Array([
-    f / aspect, 0, 0, 0,
-    0, f, 0, 0,
-    0, 0, far / (near - far), -1,
-    0, 0, (near * far) / (near - far), 0,
+    f / aspect,
+    0,
+    0,
+    0,
+    0,
+    f,
+    0,
+    0,
+    0,
+    0,
+    far / (near - far),
+    -1,
+    0,
+    0,
+    (near * far) / (near - far),
+    0,
   ]);
 }
 
@@ -62,9 +158,18 @@ function mat4LookAt(eye: Vec3, target: Vec3, up: Vec3): Mat4 {
   const yAxis = vec3Cross(zAxis, xAxis);
 
   return new Float32Array([
-    xAxis[0], yAxis[0], zAxis[0], 0,
-    xAxis[1], yAxis[1], zAxis[1], 0,
-    xAxis[2], yAxis[2], zAxis[2], 0,
+    xAxis[0],
+    yAxis[0],
+    zAxis[0],
+    0,
+    xAxis[1],
+    yAxis[1],
+    zAxis[1],
+    0,
+    xAxis[2],
+    yAxis[2],
+    zAxis[2],
+    0,
     -(xAxis[0] * eye[0] + xAxis[1] * eye[1] + xAxis[2] * eye[2]),
     -(yAxis[0] * eye[0] + yAxis[1] * eye[1] + yAxis[2] * eye[2]),
     -(zAxis[0] * eye[0] + zAxis[1] * eye[1] + zAxis[2] * eye[2]),
@@ -88,60 +193,118 @@ function mat4Multiply(a: Mat4, b: Mat4): Mat4 {
   return out;
 }
 
-function mat4Translation(x: number, y: number, z: number): Mat4 {
-  return new Float32Array([
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    x, y, z, 1,
-  ]);
+function createSolidColor(
+  r: number,
+  g: number,
+  b: number,
+): [number, number, number] {
+  return [r, g, b];
 }
 
-function createCubeVertices() {
-  const s = 0.5;
+function createChunk(chunkX: number, chunkZ: number): Chunk {
+  const blocks = new Uint8Array(CHUNK_SIZE_X * CHUNK_HEIGHT * CHUNK_SIZE_Z);
 
-  return new Float32Array([
-    -s, -s, s, 1, 0.25, 0.2,
-    s, -s, s, 1, 0.25, 0.2,
-    s, s, s, 1, 0.25, 0.2,
-    -s, s, s, 1, 0.25, 0.2,
+  for (let localZ = 0; localZ < CHUNK_SIZE_Z; localZ += 1) {
+    for (let localX = 0; localX < CHUNK_SIZE_X; localX += 1) {
+      const worldX = chunkX * CHUNK_SIZE_X + localX;
+      const worldZ = chunkZ * CHUNK_SIZE_Z + localZ;
+      const height = CHUNK_HEIGHT;
 
-    s, -s, -s, 0.2, 0.85, 1,
-    -s, -s, -s, 0.2, 0.85, 1,
-    -s, s, -s, 0.2, 0.85, 1,
-    s, s, -s, 0.2, 0.85, 1,
+      for (let y = 0; y < height; y += 1) {
+        blocks[getBlockIndex(localX, y, localZ)] = BLOCK_SOLID;
+      }
+    }
+  }
 
-    -s, -s, -s, 0.25, 0.95, 0.4,
-    -s, -s, s, 0.25, 0.95, 0.4,
-    -s, s, s, 0.25, 0.95, 0.4,
-    -s, s, -s, 0.25, 0.95, 0.4,
-
-    s, -s, s, 0.95, 0.85, 0.2,
-    s, -s, -s, 0.95, 0.85, 0.2,
-    s, s, -s, 0.95, 0.85, 0.2,
-    s, s, s, 0.95, 0.85, 0.2,
-
-    -s, s, s, 0.75, 0.35, 1,
-    s, s, s, 0.75, 0.35, 1,
-    s, s, -s, 0.75, 0.35, 1,
-    -s, s, -s, 0.75, 0.35, 1,
-
-    -s, -s, -s, 0.95, 0.45, 0.15,
-    s, -s, -s, 0.95, 0.45, 0.15,
-    s, -s, s, 0.95, 0.45, 0.15,
-    -s, -s, s, 0.95, 0.45, 0.15,
-  ]);
+  return { chunkX, chunkZ, blocks };
 }
 
-function createCubeIndices() {
-  return new Uint16Array([
-    0, 1, 2, 0, 2, 3,
-    4, 5, 6, 4, 6, 7,
-    8, 9, 10, 8, 10, 11,
-    12, 13, 14, 12, 14, 15,
-    16, 17, 18, 16, 18, 19,
-    20, 21, 22, 20, 22, 23,
-  ]);
+function getBlockIndex(x: number, y: number, z: number) {
+  return x + z * CHUNK_SIZE_X + y * CHUNK_SIZE_X * CHUNK_SIZE_Z;
+}
+
+function getChunkBlock(chunk: Chunk, x: number, y: number, z: number) {
+  if (
+    x < 0 ||
+    x >= CHUNK_SIZE_X ||
+    y < 0 ||
+    y >= CHUNK_HEIGHT ||
+    z < 0 ||
+    z >= CHUNK_SIZE_Z
+  ) {
+    return BLOCK_AIR;
+  }
+
+  return chunk.blocks[getBlockIndex(x, y, z)];
+}
+
+function getBlockColor(y: number, normalY: number): [number, number, number] {
+  if (normalY > 0) {
+    return createSolidColor(0.42, 0.8, 0.28);
+  }
+  if (normalY < 0) {
+    return createSolidColor(0.32, 0.24, 0.18);
+  }
+  if (y < 4) {
+    return createSolidColor(0.45, 0.34, 0.25);
+  }
+
+  return createSolidColor(0.55, 0.43, 0.3);
+}
+
+function buildChunkMesh(chunk: Chunk) {
+  const vertices: number[] = [];
+  const indices: number[] = [];
+  let vertexCount = 0;
+
+  for (let y = 0; y < CHUNK_HEIGHT; y += 1) {
+    for (let z = 0; z < CHUNK_SIZE_Z; z += 1) {
+      for (let x = 0; x < CHUNK_SIZE_X; x += 1) {
+        if (getChunkBlock(chunk, x, y, z) === BLOCK_AIR) {
+          continue;
+        }
+
+        for (const face of FACE_DEFINITIONS) {
+          const [offsetX, offsetY, offsetZ] = face.neighborOffset;
+
+          if (
+            getChunkBlock(chunk, x + offsetX, y + offsetY, z + offsetZ) !==
+            BLOCK_AIR
+          ) {
+            continue;
+          }
+
+          const [r, g, b] = getBlockColor(y, face.normal[1]);
+
+          for (const corner of face.corners) {
+            vertices.push(
+              chunk.chunkX * CHUNK_SIZE_X + x + corner[0],
+              y + corner[1],
+              chunk.chunkZ * CHUNK_SIZE_Z + z + corner[2],
+              r,
+              g,
+              b,
+            );
+          }
+
+          indices.push(
+            vertexCount,
+            vertexCount + 1,
+            vertexCount + 2,
+            vertexCount,
+            vertexCount + 2,
+            vertexCount + 3,
+          );
+          vertexCount += 4;
+        }
+      }
+    }
+  }
+
+  return {
+    vertices: new Float32Array(vertices),
+    indices: new Uint32Array(indices),
+  };
 }
 
 async function initWebGPU() {
@@ -168,7 +331,10 @@ async function initWebGPU() {
   const configureContext = () => {
     const devicePixelRatio = window.devicePixelRatio || 1;
     const width = Math.max(1, Math.floor(window.innerWidth * devicePixelRatio));
-    const height = Math.max(1, Math.floor(window.innerHeight * devicePixelRatio));
+    const height = Math.max(
+      1,
+      Math.floor(window.innerHeight * devicePixelRatio),
+    );
 
     if (canvas.width !== width || canvas.height !== height) {
       canvas.width = width;
@@ -196,7 +362,6 @@ async function initWebGPU() {
     code: `
       struct Uniforms {
         viewProjection: mat4x4f,
-        model: mat4x4f,
       };
 
       @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -214,7 +379,7 @@ async function initWebGPU() {
       @vertex
       fn vs_main(input: VertexInput) -> VertexOutput {
         var output: VertexOutput;
-        output.position = uniforms.viewProjection * uniforms.model * vec4f(input.position, 1.0);
+        output.position = uniforms.viewProjection * vec4f(input.position, 1.0);
         output.color = input.color;
         return output;
       }
@@ -252,6 +417,7 @@ async function initWebGPU() {
     },
     primitive: {
       topology: "triangle-list",
+      cullMode: "back",
     },
     depthStencil: {
       format: "depth24plus",
@@ -260,27 +426,27 @@ async function initWebGPU() {
     },
   });
 
-  const vertices = createCubeVertices();
-  const indices = createCubeIndices();
+  const chunk = createChunk(0, 0);
+  const mesh = buildChunkMesh(chunk);
 
   const vertexBuffer = device.createBuffer({
-    size: vertices.byteLength,
+    size: mesh.vertices.byteLength,
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     mappedAtCreation: true,
   });
-  new Float32Array(vertexBuffer.getMappedRange()).set(vertices);
+  new Float32Array(vertexBuffer.getMappedRange()).set(mesh.vertices);
   vertexBuffer.unmap();
 
   const indexBuffer = device.createBuffer({
-    size: indices.byteLength,
+    size: mesh.indices.byteLength,
     usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
     mappedAtCreation: true,
   });
-  new Uint16Array(indexBuffer.getMappedRange()).set(indices);
+  new Uint32Array(indexBuffer.getMappedRange()).set(mesh.indices);
   indexBuffer.unmap();
 
   const uniformBuffer = device.createBuffer({
-    size: 16 * 4 * 2,
+    size: 16 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 
@@ -291,16 +457,14 @@ async function initWebGPU() {
 
   const pressedKeys = new Set<string>();
   const camera = {
-    position: [0, 0, 0] as Vec3,
+    position: [8, CHUNK_HEIGHT + 20, 28] as Vec3,
     yaw: -90 * DEG_TO_RAD,
-    pitch: 0,
+    pitch: -0.45,
   };
 
-  const cubeTranslation = mat4Translation(0, 0, -5);
   const controls = document.createElement("div");
   controls.className = "controls-hint";
-  controls.textContent =
-    "Click canvas to look. Move with WASD or arrows, Space up, Shift down. Esc releases pointer.";
+  controls.textContent = `Click canvas to look. Move with WASD or arrows, Space up, Shift down. Chunk: ${CHUNK_SIZE_X}x${CHUNK_SIZE_Z}x${CHUNK_HEIGHT}.`;
   document.body.append(controls);
 
   const movementAliases = new Map<string, string>([
@@ -345,8 +509,8 @@ async function initWebGPU() {
   document.addEventListener("pointerlockchange", () => {
     controls.textContent =
       document.pointerLockElement === canvas
-        ? "Looking enabled. WASD/arrows move, Space up, Shift down. Esc releases pointer."
-        : "Click canvas to look. Move with WASD or arrows, Space up, Shift down. Esc releases pointer.";
+        ? `Looking enabled. WASD/arrows move, Space up, Shift down. Faces: ${mesh.indices.length / 6}.`
+        : `Click canvas to look. Move with WASD or arrows, Space up, Shift down. Chunk: ${CHUNK_SIZE_X}x${CHUNK_SIZE_Z}x${CHUNK_HEIGHT}.`;
   });
 
   document.addEventListener("mousemove", (event) => {
@@ -356,11 +520,15 @@ async function initWebGPU() {
 
     const sensitivity = 0.0025;
     camera.yaw += event.movementX * sensitivity;
-    camera.pitch = clamp(camera.pitch - event.movementY * sensitivity, -89 * DEG_TO_RAD, 89 * DEG_TO_RAD);
+    camera.pitch = clamp(
+      camera.pitch - event.movementY * sensitivity,
+      -89 * DEG_TO_RAD,
+      89 * DEG_TO_RAD,
+    );
   });
 
   const up: Vec3 = [0, 1, 0];
-  const frameUniforms = new Float32Array(32);
+  const viewProjection = new Float32Array(16);
 
   const getForwardVector = (): Vec3 =>
     vec3Normalize([
@@ -373,13 +541,16 @@ async function initWebGPU() {
     const forward = getForwardVector();
     const flatForward = vec3Normalize([forward[0], 0, forward[2]]);
     const right = vec3Normalize(vec3Cross(flatForward, up));
-    const speed = 4 * deltaTime;
+    const speed = 10 * deltaTime;
 
     if (pressedKeys.has("forward")) {
       camera.position = vec3Add(camera.position, vec3Scale(flatForward, speed));
     }
     if (pressedKeys.has("backward")) {
-      camera.position = vec3Add(camera.position, vec3Scale(flatForward, -speed));
+      camera.position = vec3Add(
+        camera.position,
+        vec3Scale(flatForward, -speed),
+      );
     }
     if (pressedKeys.has("left")) {
       camera.position = vec3Add(camera.position, vec3Scale(right, -speed));
@@ -406,19 +577,16 @@ async function initWebGPU() {
     const forward = updateCamera(deltaTime);
     const target = vec3Add(camera.position, forward);
     const aspect = canvas.width / canvas.height;
-    const projection = mat4Perspective(60 * DEG_TO_RAD, aspect, 0.1, 100);
+    const projection = mat4Perspective(60 * DEG_TO_RAD, aspect, 0.1, 50_000);
     const view = mat4LookAt(camera.position, target, up);
-    const viewProjection = mat4Multiply(projection, view);
-
-    frameUniforms.set(viewProjection, 0);
-    frameUniforms.set(cubeTranslation, 16);
-    device.queue.writeBuffer(uniformBuffer, 0, frameUniforms);
+    viewProjection.set(mat4Multiply(projection, view));
+    device.queue.writeBuffer(uniformBuffer, 0, viewProjection);
 
     const commandEncoder = device.createCommandEncoder();
     const renderPass = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
-          clearValue: { r: 0.04, g: 0.05, b: 0.08, a: 1 },
+          clearValue: { r: 0.53, g: 0.74, b: 0.95, a: 1 },
           loadOp: "clear",
           storeOp: "store",
           view: context.getCurrentTexture().createView(),
@@ -435,15 +603,14 @@ async function initWebGPU() {
     renderPass.setPipeline(pipeline);
     renderPass.setBindGroup(0, bindGroup);
     renderPass.setVertexBuffer(0, vertexBuffer);
-    renderPass.setIndexBuffer(indexBuffer, "uint16");
-    renderPass.drawIndexed(indices.length);
+    renderPass.setIndexBuffer(indexBuffer, "uint32");
+    renderPass.drawIndexed(mesh.indices.length);
     renderPass.end();
 
     device.queue.submit([commandEncoder.finish()]);
     requestAnimationFrame(render);
   };
 
-  frameUniforms.set(IDENTITY_MATRIX, 16);
   requestAnimationFrame(render);
 }
 
@@ -464,6 +631,7 @@ window.addEventListener("resize", () => {
 });
 
 initWebGPU().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : "Unknown WebGPU error.";
+  const message =
+    error instanceof Error ? error.message : "Unknown WebGPU error.";
   showError(message);
 });
