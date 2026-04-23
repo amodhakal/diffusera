@@ -31,6 +31,26 @@
         display: block;
         width: 100vw;
         height: 100vh;
+        cursor: grab;
+      }
+
+      #canvas:active {
+        cursor: grabbing;
+      }
+
+      .controls-hint {
+        position: fixed;
+        left: 16px;
+        bottom: 16px;
+        padding: 10px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        background: rgba(9, 11, 18, 0.72);
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 13px;
+        letter-spacing: 0.01em;
+        backdrop-filter: blur(10px);
+        pointer-events: none;
       }
     </style>
   </head>
