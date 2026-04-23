@@ -13,6 +13,7 @@ const VERTEX_STRIDE = FLOATS_PER_VERTEX * Float32Array.BYTES_PER_ELEMENT;
 const CHUNK_SIZE_X = 16;
 const CHUNK_SIZE_Z = 16;
 const CHUNK_HEIGHT = 1024;
+const RENDER_DISTANCE_CHUNKS = 3;
 const BLOCK_AIR = 0;
 const BLOCK_SOLID = 1;
 
@@ -25,6 +26,19 @@ type Chunk = {
   chunkX: number;
   chunkZ: number;
   blocks: Uint8Array;
+};
+
+type ChunkMesh = {
+  vertices: Float32Array;
+  indices: Uint32Array;
+};
+
+type RenderChunk = {
+  chunk: Chunk;
+  mesh: ChunkMesh;
+  vertexBuffer: GPUBuffer;
+  indexBuffer: GPUBuffer;
+  indexCount: number;
 };
 
 type FaceDefinition = {
@@ -221,6 +235,14 @@ function createChunk(chunkX: number, chunkZ: number): Chunk {
   return { chunkX, chunkZ, blocks };
 }
 
+function getChunkKey(chunkX: number, chunkZ: number) {
+  return `${chunkX},${chunkZ}`;
+}
+
+function getChunkCoordinate(worldCoordinate: number, chunkSize: number) {
+  return Math.floor(worldCoordinate / chunkSize);
+}
+
 function getBlockIndex(x: number, y: number, z: number) {
   return x + z * CHUNK_SIZE_X + y * CHUNK_SIZE_X * CHUNK_SIZE_Z;
 }
@@ -307,6 +329,99 @@ function buildChunkMesh(chunk: Chunk) {
     vertices: new Float32Array(vertices),
     indices: new Uint32Array(indices),
   };
+}
+
+function createRenderChunk(
+  device: GPUDevice,
+  chunkX: number,
+  chunkZ: number,
+): RenderChunk {
+  const chunk = createChunk(chunkX, chunkZ);
+  const mesh = buildChunkMesh(chunk);
+
+  const vertexBuffer = device.createBuffer({
+    size: mesh.vertices.byteLength,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    mappedAtCreation: true,
+  });
+  new Float32Array(vertexBuffer.getMappedRange()).set(mesh.vertices);
+  vertexBuffer.unmap();
+
+  const indexBuffer = device.createBuffer({
+    size: mesh.indices.byteLength,
+    usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+    mappedAtCreation: true,
+  });
+  new Uint32Array(indexBuffer.getMappedRange()).set(mesh.indices);
+  indexBuffer.unmap();
+
+  return {
+    chunk,
+    mesh,
+    vertexBuffer,
+    indexBuffer,
+    indexCount: mesh.indices.length,
+  };
+}
+
+function destroyRenderChunk(renderChunk: RenderChunk) {
+  renderChunk.vertexBuffer.destroy();
+  renderChunk.indexBuffer.destroy();
+}
+
+function syncChunksAroundCamera(
+  device: GPUDevice,
+  loadedChunks: Map<string, RenderChunk>,
+  cameraPosition: Vec3,
+) {
+  const currentChunkX = getChunkCoordinate(cameraPosition[0], CHUNK_SIZE_X);
+  const currentChunkZ = getChunkCoordinate(cameraPosition[2], CHUNK_SIZE_Z);
+  const maxDistanceSquared = RENDER_DISTANCE_CHUNKS * RENDER_DISTANCE_CHUNKS;
+  const requiredChunkKeys = new Set<string>();
+
+  for (const [chunkKey, renderChunk] of loadedChunks) {
+    const chunkOffsetX = renderChunk.chunk.chunkX - currentChunkX;
+    const chunkOffsetZ = renderChunk.chunk.chunkZ - currentChunkZ;
+    const distanceSquared =
+      chunkOffsetX * chunkOffsetX + chunkOffsetZ * chunkOffsetZ;
+
+    if (distanceSquared > maxDistanceSquared) {
+      destroyRenderChunk(renderChunk);
+      loadedChunks.delete(chunkKey);
+    }
+  }
+
+  for (
+    let chunkX = currentChunkX - RENDER_DISTANCE_CHUNKS;
+    chunkX <= currentChunkX + RENDER_DISTANCE_CHUNKS;
+    chunkX += 1
+  ) {
+    for (
+      let chunkZ = currentChunkZ - RENDER_DISTANCE_CHUNKS;
+      chunkZ <= currentChunkZ + RENDER_DISTANCE_CHUNKS;
+      chunkZ += 1
+    ) {
+      const chunkOffsetX = chunkX - currentChunkX;
+      const chunkOffsetZ = chunkZ - currentChunkZ;
+      const distanceSquared =
+        chunkOffsetX * chunkOffsetX + chunkOffsetZ * chunkOffsetZ;
+
+      if (distanceSquared > maxDistanceSquared) {
+        continue;
+      }
+
+      const chunkKey = getChunkKey(chunkX, chunkZ);
+      requiredChunkKeys.add(chunkKey);
+
+      if (loadedChunks.has(chunkKey)) {
+        continue;
+      }
+
+      loadedChunks.set(chunkKey, createRenderChunk(device, chunkX, chunkZ));
+    }
+  }
+
+  return requiredChunkKeys.size;
 }
 
 async function initWebGPU() {
@@ -428,25 +543,6 @@ async function initWebGPU() {
     },
   });
 
-  const chunk = createChunk(0, 0);
-  const mesh = buildChunkMesh(chunk);
-
-  const vertexBuffer = device.createBuffer({
-    size: mesh.vertices.byteLength,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true,
-  });
-  new Float32Array(vertexBuffer.getMappedRange()).set(mesh.vertices);
-  vertexBuffer.unmap();
-
-  const indexBuffer = device.createBuffer({
-    size: mesh.indices.byteLength,
-    usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true,
-  });
-  new Uint32Array(indexBuffer.getMappedRange()).set(mesh.indices);
-  indexBuffer.unmap();
-
   const uniformBuffer = device.createBuffer({
     size: 16 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -463,6 +559,7 @@ async function initWebGPU() {
     yaw: -90 * DEG_TO_RAD,
     pitch: -0.45,
   };
+  const loadedChunks = new Map<string, RenderChunk>();
 
   const controls = document.createElement("div");
   controls.className = "controls-hint";
@@ -509,9 +606,10 @@ async function initWebGPU() {
   });
 
   document.addEventListener("pointerlockchange", () => {
+    const loadedChunkCount = loadedChunks.size;
     controls.textContent =
       document.pointerLockElement === canvas
-        ? `Looking enabled. WASD/arrows move, Space up, Shift down. Faces: ${mesh.indices.length / 6}.`
+        ? `Looking enabled. WASD/arrows move, Space up, Shift down. Loaded chunks: ${loadedChunkCount}.`
         : `Click canvas to look. Move with WASD or arrows, Space up, Shift down. Chunk: ${CHUNK_SIZE_X}x${CHUNK_SIZE_Z}x${CHUNK_HEIGHT}.`;
   });
 
@@ -577,6 +675,11 @@ async function initWebGPU() {
     previousTime = time;
 
     const forward = updateCamera(deltaTime);
+    const activeChunkCount = syncChunksAroundCamera(
+      device,
+      loadedChunks,
+      camera.position,
+    );
     const target = vec3Add(camera.position, forward);
     const aspect = canvas.width / canvas.height;
     const projection = mat4Perspective(60 * DEG_TO_RAD, aspect, 0.1, 50_000);
@@ -604,12 +707,22 @@ async function initWebGPU() {
 
     renderPass.setPipeline(pipeline);
     renderPass.setBindGroup(0, bindGroup);
-    renderPass.setVertexBuffer(0, vertexBuffer);
-    renderPass.setIndexBuffer(indexBuffer, "uint32");
-    renderPass.drawIndexed(mesh.indices.length);
+    for (const renderChunk of loadedChunks.values()) {
+      if (renderChunk.indexCount === 0) {
+        continue;
+      }
+
+      renderPass.setVertexBuffer(0, renderChunk.vertexBuffer);
+      renderPass.setIndexBuffer(renderChunk.indexBuffer, "uint32");
+      renderPass.drawIndexed(renderChunk.indexCount);
+    }
     renderPass.end();
 
     device.queue.submit([commandEncoder.finish()]);
+    controls.textContent =
+      document.pointerLockElement === canvas
+        ? `Looking enabled. WASD/arrows move, Space up, Shift down. Loaded chunks: ${activeChunkCount}.`
+        : `Click canvas to look. Move with WASD or arrows, Space up, Shift down. Chunk: ${CHUNK_SIZE_X}x${CHUNK_SIZE_Z}x${CHUNK_HEIGHT}. Loaded: ${activeChunkCount}.`;
     requestAnimationFrame(render);
   };
 
