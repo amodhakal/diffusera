@@ -38,10 +38,8 @@
         cursor: grabbing;
       }
 
-      .controls-hint {
+      .hud-panel {
         position: fixed;
-        left: 16px;
-        bottom: 16px;
         padding: 10px 12px;
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 999px;
@@ -51,6 +49,18 @@
         letter-spacing: 0.01em;
         backdrop-filter: blur(10px);
         pointer-events: none;
+      }
+
+      .hud-panel-bottom-left {
+        left: 16px;
+        bottom: 16px;
+      }
+
+      .hud-panel-top-right {
+        top: 16px;
+        right: 16px;
+        min-width: 88px;
+        text-align: right;
       }
     </style>
   </head>

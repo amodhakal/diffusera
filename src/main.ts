@@ -32,12 +32,23 @@ type ChunkMesh = {
   indices: Uint32Array;
 };
 
+type Aabb = {
+  min: Vec3;
+  max: Vec3;
+};
+
+type Plane = {
+  normal: Vec3;
+  distance: number;
+};
+
 type RenderChunk = {
   chunk: Chunk;
   mesh: ChunkMesh;
   vertexBuffer: GPUBuffer;
   indexBuffer: GPUBuffer;
   indexCount: number;
+  bounds: Aabb;
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -132,6 +143,83 @@ function mat4Multiply(a: Mat4, b: Mat4): Mat4 {
   }
 
   return out;
+}
+
+function createChunkBounds(chunk: Chunk): Aabb {
+  let minY = CHUNK_HEIGHT;
+  let maxY = 0;
+
+  for (const topHeight of chunk.topHeights) {
+    minY = Math.min(minY, topHeight);
+    maxY = Math.max(maxY, topHeight);
+  }
+
+  const baseX = chunk.chunkX * CHUNK_SIZE_X;
+  const baseZ = chunk.chunkZ * CHUNK_SIZE_Z;
+
+  return {
+    min: [baseX, minY, baseZ],
+    max: [baseX + CHUNK_SIZE_X, Math.max(minY, maxY), baseZ + CHUNK_SIZE_Z],
+  };
+}
+
+function normalizePlane(a: number, b: number, c: number, d: number): Plane {
+  const length = Math.hypot(a, b, c) || 1;
+
+  return {
+    normal: [a / length, b / length, c / length],
+    distance: d / length,
+  };
+}
+
+function extractFrustumPlanes(matrix: Mat4): Plane[] {
+  const m00 = matrix[0];
+  const m01 = matrix[4];
+  const m02 = matrix[8];
+  const m03 = matrix[12];
+  const m10 = matrix[1];
+  const m11 = matrix[5];
+  const m12 = matrix[9];
+  const m13 = matrix[13];
+  const m20 = matrix[2];
+  const m21 = matrix[6];
+  const m22 = matrix[10];
+  const m23 = matrix[14];
+  const m30 = matrix[3];
+  const m31 = matrix[7];
+  const m32 = matrix[11];
+  const m33 = matrix[15];
+
+  return [
+    normalizePlane(m30 + m00, m31 + m01, m32 + m02, m33 + m03),
+    normalizePlane(m30 - m00, m31 - m01, m32 - m02, m33 - m03),
+    normalizePlane(m30 + m10, m31 + m11, m32 + m12, m33 + m13),
+    normalizePlane(m30 - m10, m31 - m11, m32 - m12, m33 - m13),
+    normalizePlane(m30 + m20, m31 + m21, m32 + m22, m33 + m23),
+    normalizePlane(m30 - m20, m31 - m21, m32 - m22, m33 - m23),
+  ];
+}
+
+function isAabbVisible(bounds: Aabb, frustumPlanes: Plane[]) {
+  for (const plane of frustumPlanes) {
+    const point: Vec3 = [
+      plane.normal[0] >= 0 ? bounds.max[0] : bounds.min[0],
+      plane.normal[1] >= 0 ? bounds.max[1] : bounds.min[1],
+      plane.normal[2] >= 0 ? bounds.max[2] : bounds.min[2],
+    ];
+
+    const distance =
+      plane.normal[0] * point[0] +
+      plane.normal[1] * point[1] +
+      plane.normal[2] * point[2] +
+      plane.distance;
+
+    if (distance < 0) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function createSolidColor(
@@ -365,6 +453,7 @@ function createRenderChunk(
     vertexBuffer,
     indexBuffer,
     indexCount: mesh.indices.length,
+    bounds: createChunkBounds(chunk),
   };
 }
 
@@ -566,9 +655,10 @@ async function initWebGPU() {
   const loadedChunks = new Map<string, RenderChunk>();
 
   const controls = document.createElement("div");
-  controls.className = "controls-hint";
-  controls.textContent = `Click canvas to look. Move with WASD or arrows, Space up, Shift down. Chunk: ${CHUNK_SIZE_X}x${CHUNK_SIZE_Z}x${CHUNK_HEIGHT}.`;
-  document.body.append(controls);
+  controls.className = "hud-panel hud-panel-bottom-left";
+  const fps = document.createElement("div");
+  fps.className = "hud-panel hud-panel-top-right";
+  document.body.append(controls, fps);
 
   const movementAliases = new Map<string, string>([
     ["w", "forward"],
@@ -610,11 +700,7 @@ async function initWebGPU() {
   });
 
   document.addEventListener("pointerlockchange", () => {
-    const loadedChunkCount = loadedChunks.size;
-    controls.textContent =
-      document.pointerLockElement === canvas
-        ? `Looking enabled. WASD/arrows move, Space up, Shift down. Loaded chunks: ${loadedChunkCount}.`
-        : `Click canvas to look. Move with WASD or arrows, Space up, Shift down. Chunk: ${CHUNK_SIZE_X}x${CHUNK_SIZE_Z}x${CHUNK_HEIGHT}.`;
+    updateHud(loadedChunks.size, currentFps, lastVisibleChunkCount);
   });
 
   document.addEventListener("mousemove", (event) => {
@@ -633,6 +719,25 @@ async function initWebGPU() {
 
   const up: Vec3 = [0, 1, 0];
   const viewProjection = new Float32Array(16);
+  let currentFps: number | null = null;
+  let lastVisibleChunkCount: number | null = null;
+  const updateHud = (
+    loadedChunkCount: number,
+    fpsValue: number | null,
+    visibleChunkCount: number | null,
+  ) => {
+    const visibilitySuffix =
+      visibleChunkCount === null ? "" : ` Visible: ${visibleChunkCount}.`;
+
+    controls.textContent =
+      document.pointerLockElement === canvas
+        ? `Looking enabled. WASD/arrows move, Space up, Shift down. Loaded chunks: ${loadedChunkCount}.${visibilitySuffix}`
+        : `Click canvas to look. Move with WASD or arrows, Space up, Shift down. Chunk: ${CHUNK_SIZE_X}x${CHUNK_SIZE_Z}x${CHUNK_HEIGHT}. Loaded: ${loadedChunkCount}.${visibilitySuffix}`;
+    fps.textContent =
+      fpsValue === null ? "FPS: --" : `FPS: ${Math.round(fpsValue)}`;
+  };
+
+  updateHud(loadedChunks.size, currentFps, lastVisibleChunkCount);
 
   const getForwardVector = (): Vec3 =>
     vec3Normalize([
@@ -677,6 +782,7 @@ async function initWebGPU() {
   const render = (time: number) => {
     const deltaTime = Math.min(0.05, (time - previousTime) / 1000);
     previousTime = time;
+    currentFps = deltaTime > 0 ? 1 / deltaTime : null;
 
     const forward = updateCamera(deltaTime);
     const activeChunkCount = syncChunksAroundCamera(
@@ -689,6 +795,7 @@ async function initWebGPU() {
     const projection = mat4Perspective(60 * DEG_TO_RAD, aspect, 0.1, 50_000);
     const view = mat4LookAt(camera.position, target, up);
     viewProjection.set(mat4Multiply(projection, view));
+    const frustumPlanes = extractFrustumPlanes(viewProjection);
     device.queue.writeBuffer(uniformBuffer, 0, viewProjection);
 
     const commandEncoder = device.createCommandEncoder();
@@ -711,10 +818,16 @@ async function initWebGPU() {
 
     renderPass.setPipeline(pipeline);
     renderPass.setBindGroup(0, bindGroup);
+    let visibleChunkCount = 0;
     for (const renderChunk of loadedChunks.values()) {
       if (renderChunk.indexCount === 0) {
         continue;
       }
+      if (!isAabbVisible(renderChunk.bounds, frustumPlanes)) {
+        continue;
+      }
+
+      visibleChunkCount += 1;
 
       renderPass.setVertexBuffer(0, renderChunk.vertexBuffer);
       renderPass.setIndexBuffer(renderChunk.indexBuffer, "uint32");
@@ -723,10 +836,8 @@ async function initWebGPU() {
     renderPass.end();
 
     device.queue.submit([commandEncoder.finish()]);
-    controls.textContent =
-      document.pointerLockElement === canvas
-        ? `Looking enabled. WASD/arrows move, Space up, Shift down. Loaded chunks: ${activeChunkCount}.`
-        : `Click canvas to look. Move with WASD or arrows, Space up, Shift down. Chunk: ${CHUNK_SIZE_X}x${CHUNK_SIZE_Z}x${CHUNK_HEIGHT}. Loaded: ${activeChunkCount}.`;
+    lastVisibleChunkCount = visibleChunkCount;
+    updateHud(activeChunkCount, currentFps, visibleChunkCount);
     requestAnimationFrame(render);
   };
 
