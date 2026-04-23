@@ -459,7 +459,7 @@ async function initWebGPU() {
 
   const pressedKeys = new Set<string>();
   const camera = {
-    position: [8, CHUNK_HEIGHT + 20, 28] as Vec3,
+    position: [8, getTerrainHeight(8, 8) + 10, 8] as Vec3,
     yaw: -90 * DEG_TO_RAD,
     pitch: -0.45,
   };
